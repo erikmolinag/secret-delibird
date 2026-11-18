@@ -50,14 +50,13 @@ export default function Inicio() {
           </p>
 
           <h1 className="text-balance text-4xl font-extrabold leading-[1.1] sm:text-5xl md:text-6xl">
-            El amigo secreto que reparte{" "}
+            El Santa Secreto que organiza{" "}
             <span className="texto-logo whitespace-nowrap">Delibird</span>
           </h1>
 
           <p className="max-w-xl text-lg font-semibold text-gris">
-            Organiza tu intercambio navideño sin cadenas de WhatsApp ni papelitos
-            en una bolsa. Sorteo con reglas de verdad, listas de deseos con foto y
-            un enlace por invitado.
+            Organiza tu intercambio navideño fácilmente. Sorteo con reglas
+            condicionales, listas de deseos con foto y enlaces de compra.
           </p>
 
           <div className="flex flex-wrap items-center gap-3">

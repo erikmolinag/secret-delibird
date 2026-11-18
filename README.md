@@ -114,6 +114,7 @@ Copia `.env.example` a `.env.local`:
 | `RESEND_API_KEY` | Vacío en local. En producción, la key de Resend |
 | `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>` |
 | `APP_URL` | La URL pública. Es la base de los magic links |
+| `ADMIN_EMAILS` | Correos (separados por coma) que pueden entrar a `/admin`. Vacía, nadie entra |
 
 ## Desplegar (Vercel + Neon + Resend)
 
@@ -164,7 +165,7 @@ node -e "const d=require('node:dns').promises;d.setServers(['1.1.1.1']);d.resolv
 
 ### 3. Vercel (la app)
 
-Importa el repo, deja el preset de Next.js y pon las cinco variables en
+Importa el repo, deja el preset de Next.js y pon las seis variables en
 Production y Preview:
 
 | Variable | Valor |
@@ -174,6 +175,7 @@ Production y Preview:
 | `RESEND_API_KEY` | la key `re_...` |
 | `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>` |
 | `APP_URL` | `https://tudominio.com` |
+| `ADMIN_EMAILS` | tu correo, el mismo con el que entras |
 
 Cambiar una variable no afecta al sitio hasta que vuelves a desplegar.
 
@@ -195,7 +197,7 @@ dominio.
 ```
 src/
   actions/     server actions (auth, eventos, wishlist)
-  app/         rutas: landing, login, /eventos, /eventos/[id], /e/[id]
+  app/         rutas: landing, login, /eventos, /eventos/[id], /e/[id], /admin
   components/  UI con tema propio (sin librería de componentes)
   db/          esquema de Drizzle y cliente
   lib/         auth, magic links, correo, scraping de links, Pokémon, queries
@@ -221,6 +223,10 @@ Detalles que no se ven pero importan:
   de tu propia lista ni siquiera toca esa tabla, así que no hay forma de que se
   te escape por pantalla. Al volver a sortear se borran, porque eran del reparto
   anterior.
+- `/admin` es de solo lectura: usuarios, intercambios y sus invitados, para
+  quien esté en `ADMIN_EMAILS`. A los demás les responde 404, como si no
+  existiera. No enseña quién le regala a quién; eso sigue siendo solo del botón
+  de revelar del organizador, que deja registro. Se llega desde el perfil.
 
 ## Nota
 

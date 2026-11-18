@@ -3,7 +3,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { db, schema } from "@/db";
 
@@ -60,5 +60,21 @@ export async function usuarioActual() {
 export async function requerirUsuario() {
   const usuario = await usuarioActual();
   if (!usuario) redirect("/login");
+  return usuario;
+}
+
+/** Quién ve el panel de admin: correos separados por coma en ADMIN_EMAILS. */
+export function esAdmin(usuario: { email: string }) {
+  const correos = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((correo) => correo.trim().toLowerCase())
+    .filter(Boolean);
+  return correos.includes(usuario.email.toLowerCase());
+}
+
+/** Para los demás el panel no existe: 404, no "prohibido". */
+export async function requerirAdmin() {
+  const usuario = await requerirUsuario();
+  if (!esAdmin(usuario)) notFound();
   return usuario;
 }

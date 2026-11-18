@@ -1,11 +1,11 @@
-import { LogOut } from "lucide-react";
+import { LogOut, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 
 import { cerrarSesionAccion } from "@/actions/auth";
 import { actualizarPerfilAccion } from "@/actions/perfil";
 import { Estrella } from "@/components/adornos";
 import { SelectorEntrenador } from "@/components/selector-entrenador";
-import { Boton } from "@/components/ui/boton";
+import { Boton, BotonLink } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Campo, Entrada } from "@/components/ui/campo";
 import {
@@ -14,7 +14,7 @@ import {
   TarjetaEncabezado,
   TituloSeccion,
 } from "@/components/ui/tarjeta";
-import { requerirUsuario } from "@/lib/auth";
+import { esAdmin, requerirUsuario } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Mi perfil" };
 
@@ -90,12 +90,21 @@ export default async function Perfil({
       </form>
 
       {!bienvenida ? (
-        <form action={cerrarSesionAccion} className="text-center">
-          <Boton type="submit" variante="peligro" tamano="sm">
-            <LogOut className="size-4" />
-            Cerrar sesión
-          </Boton>
-        </form>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {/* El panel no tiene botón en el encabezado: en el teléfono no cabe. */}
+          {esAdmin(usuario) ? (
+            <BotonLink href="/admin" variante="azul" tamano="sm">
+              <ShieldCheck className="size-4" />
+              Panel de admin
+            </BotonLink>
+          ) : null}
+          <form action={cerrarSesionAccion}>
+            <Boton type="submit" variante="peligro" tamano="sm">
+              <LogOut className="size-4" />
+              Cerrar sesión
+            </Boton>
+          </form>
+        </div>
       ) : null}
     </div>
   );
