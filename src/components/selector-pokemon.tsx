@@ -1,14 +1,54 @@
 "use client";
 
 import { Loader2, Search, X } from "lucide-react";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { cambiarPokemonAccion } from "@/actions/perfil";
 import { Boton } from "@/components/ui/boton";
 import { Entrada } from "@/components/ui/campo";
-import { nombrePokemon, spritePokemon } from "@/lib/pokemon";
+import { GENERACIONES, nombrePokemon, spritePokemon } from "@/lib/pokemon";
+import { cn } from "@/lib/utils";
 
 type PokemonBasico = { id: number; nombre: string };
+
+
+/** Fuera del componente: con mil fichas, recrearla en cada render se siente. */
+function Ficha({
+  pokemon,
+  elegido,
+  bloqueado,
+  alElegir,
+}: {
+  pokemon: PokemonBasico;
+  elegido: boolean;
+  bloqueado: boolean;
+  alElegir: (pokemon: PokemonBasico) => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={bloqueado}
+      onClick={() => alElegir(pokemon)}
+      title={`#${pokemon.id} ${pokemon.nombre}`}
+      className={cn(
+        "flex flex-col items-center gap-1 rounded-2xl border-[3px] border-tinta p-2 transition hover:-translate-y-0.5 hover:bg-amarillo-claro disabled:opacity-50",
+        elegido ? "bg-amarillo" : "bg-blanco",
+      )}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={spritePokemon(pokemon.id)}
+        alt={pokemon.nombre}
+        loading="lazy"
+        className="size-20 object-contain [image-rendering:pixelated] sm:size-16"
+        referrerPolicy="no-referrer"
+      />
+      <span className="w-full truncate text-center text-xs font-bold">
+        {pokemon.nombre}
+      </span>
+    </button>
+  );
+}
 
 export function SelectorPokemon({
   participantId,
@@ -24,6 +64,7 @@ export function SelectorPokemon({
   const [resultados, setResultados] = useState<PokemonBasico[]>([]);
   const [buscando, setBuscando] = useState(false);
   const [guardando, iniciarGuardado] = useTransition();
+  const lista = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!abierto) return;
@@ -53,6 +94,17 @@ export function SelectorPokemon({
     };
   }, [abierto, consulta]);
 
+  /** Sin búsqueda, la Pokédex completa partida por generación. */
+  const porGeneracion = useMemo(() => {
+    if (consulta.trim()) return null;
+    return GENERACIONES.map((generacion) => ({
+      generacion,
+      pokemon: resultados.filter(
+        (p) => p.id >= generacion.desde && p.id <= generacion.hasta,
+      ),
+    })).filter((grupo) => grupo.pokemon.length > 0);
+  }, [consulta, resultados]);
+
   function elegir(pokemon: PokemonBasico) {
     iniciarGuardado(async () => {
       await cambiarPokemonAccion({
@@ -64,6 +116,11 @@ export function SelectorPokemon({
     });
   }
 
+  function irAGeneracion(numero: number) {
+    const destino = lista.current?.querySelector(`[data-generacion="${numero}"]`);
+    destino?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-4">
@@ -72,7 +129,7 @@ export function SelectorPokemon({
           <img
             src={spritePokemon(pokemonId)}
             alt={nombre ?? nombrePokemon(pokemonId)}
-            className="size-[86%] object-contain [image-rendering:pixelated]"
+            className="size-[88%] object-contain [image-rendering:pixelated]"
             referrerPolicy="no-referrer"
           />
         </span>
@@ -114,42 +171,70 @@ export function SelectorPokemon({
             />
           </div>
 
+          {porGeneracion ? (
+            <div className="flex flex-wrap gap-1.5">
+              {GENERACIONES.map((generacion) => (
+                <button
+                  key={generacion.numero}
+                  type="button"
+                  onClick={() => irAGeneracion(generacion.numero)}
+                  className="rounded-full border-2 border-tinta bg-blanco px-2.5 py-1 text-xs font-extrabold transition hover:bg-amarillo-claro"
+                >
+                  {generacion.region}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
           {guardando ? (
             <p className="flex items-center gap-2 text-sm font-bold text-azul">
               <Loader2 className="size-4 animate-spin" /> Guardando
             </p>
           ) : null}
 
-          <div className="grid max-h-[26rem] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:max-h-80 sm:grid-cols-5">
-            {resultados.map((pokemon) => (
-              <button
-                key={pokemon.id}
-                type="button"
-                disabled={guardando}
-                onClick={() => elegir(pokemon)}
-                title={`#${pokemon.id} ${pokemon.nombre}`}
-                className="group flex flex-col items-center gap-1 rounded-2xl border-[3px] border-tinta bg-blanco p-2 transition hover:-translate-y-0.5 hover:bg-amarillo-claro disabled:opacity-50"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={spritePokemon(pokemon.id)}
-                  alt={pokemon.nombre}
-                  loading="lazy"
-                  className="size-24 object-contain [image-rendering:pixelated] sm:size-20"
-                  referrerPolicy="no-referrer"
-                />
-                <span className="w-full truncate text-center text-xs font-bold">
-                  {pokemon.nombre}
-                </span>
-              </button>
-            ))}
-          </div>
+          <div
+            ref={lista}
+            className="max-h-[70vh] space-y-4 overflow-y-auto pr-1 sm:max-h-[28rem]"
+          >
+            {porGeneracion ? (
+              porGeneracion.map(({ generacion, pokemon }) => (
+                <div key={generacion.numero} data-generacion={generacion.numero}>
+                  <h3 className="sticky top-0 z-10 -mx-1 mb-2 bg-crema px-1 py-1 font-display text-sm font-extrabold uppercase tracking-wide text-azul-oscuro">
+                    Gen {generacion.numero} · {generacion.region}
+                  </h3>
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                    {pokemon.map((p) => (
+                      <Ficha
+                        key={p.id}
+                        pokemon={p}
+                        elegido={p.id === pokemonId}
+                        bloqueado={guardando}
+                        alElegir={elegir}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                {resultados.map((p) => (
+                  <Ficha
+                        key={p.id}
+                        pokemon={p}
+                        elegido={p.id === pokemonId}
+                        bloqueado={guardando}
+                        alElegir={elegir}
+                      />
+                ))}
+              </div>
+            )}
 
-          {!buscando && resultados.length === 0 ? (
-            <p className="py-6 text-center text-sm text-gris">
-              Nadie con ese nombre en la Pokédex.
-            </p>
-          ) : null}
+            {!buscando && resultados.length === 0 ? (
+              <p className="py-6 text-center text-sm text-gris">
+                Nadie con ese nombre en la Pokédex.
+              </p>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>

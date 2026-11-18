@@ -45,11 +45,12 @@ export async function listaPokemon(): Promise<PokemonBasico[]> {
   }
 }
 
-export async function buscarPokemon(consulta: string, limite = 48) {
+/** Sin consulta devuelve la Pokedex completa: la pantalla la parte por generacion. */
+export async function buscarPokemon(consulta: string, limite = 200) {
   const todos = await listaPokemon();
   const q = normalizar(consulta);
 
-  if (!q) return todos.slice(0, limite);
+  if (!q) return todos;
 
   const porNumero = Number.parseInt(q, 10);
   const resultados = todos.filter(

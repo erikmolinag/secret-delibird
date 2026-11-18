@@ -102,3 +102,20 @@ export function asignarPokemon(eventId: string, ocupados: number[]) {
   // Si el evento tiene más invitados que Pokémon de la lista, reciclamos.
   return (libre ?? baraja[ocupados.length % baraja.length]).id;
 }
+
+/** Rangos de la Pokedex por generacion, para navegarla sin perderse. */
+export const GENERACIONES = [
+  { numero: 1, region: "Kanto", desde: 1, hasta: 151 },
+  { numero: 2, region: "Johto", desde: 152, hasta: 251 },
+  { numero: 3, region: "Hoenn", desde: 252, hasta: 386 },
+  { numero: 4, region: "Sinnoh", desde: 387, hasta: 493 },
+  { numero: 5, region: "Teselia", desde: 494, hasta: 649 },
+  { numero: 6, region: "Kalos", desde: 650, hasta: 721 },
+  { numero: 7, region: "Alola", desde: 722, hasta: 809 },
+  { numero: 8, region: "Galar", desde: 810, hasta: 905 },
+  { numero: 9, region: "Paldea", desde: 906, hasta: 1025 },
+] as const;
+
+export function generacionDe(id: number) {
+  return GENERACIONES.find((g) => id >= g.desde && id <= g.hasta) ?? null;
+}

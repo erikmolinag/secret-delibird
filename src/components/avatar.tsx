@@ -2,14 +2,12 @@ import { urlEntrenador } from "@/lib/avatares";
 import { nombrePokemon, spritePokemon } from "@/lib/pokemon";
 import { cn } from "@/lib/utils";
 
-// Los sprites son de 96px: pintarlos a 44 los desperdicia. En movil van aun
-// mas grandes, que es donde sobra ancho.
 const medidas = {
-  xs: { caja: "size-11", insignia: "size-6", borde: "border-2" },
-  sm: { caja: "size-20 sm:size-16", insignia: "size-10 sm:size-8", borde: "border-2" },
-  md: { caja: "size-24 sm:size-20", insignia: "size-11 sm:size-9", borde: "border-2" },
-  lg: { caja: "size-32 sm:size-28", insignia: "size-14 sm:size-12", borde: "border-[3px]" },
-  xl: { caja: "size-40 sm:size-36", insignia: "size-16 sm:size-14", borde: "border-[3px]" },
+  xs: "size-11",
+  sm: "size-16",
+  md: "size-20",
+  lg: "size-24",
+  xl: "size-28",
 } as const;
 
 export type PersonaConAvatar = {
@@ -20,9 +18,15 @@ export type PersonaConAvatar = {
   trainerKey?: string | null;
 };
 
+const circulo =
+  "grid shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-tinta shadow-dura-sm";
+
+const sprite = "size-[88%] object-contain [image-rendering:pixelated]";
+
 /**
- * La cara de alguien: su entrenador con el Pokémon de este evento al lado.
- * Si todavía no ha entrado y no tiene perfil, se ve solo el Pokémon.
+ * La cara de alguien: su entrenador y el Pokémon de este evento, del mismo
+ * tamaño y uno junto al otro. Quien todavía no ha entrado no tiene perfil, así
+ * que se ve solo su Pokémon.
  */
 export function Avatar({
   persona,
@@ -36,67 +40,42 @@ export function Avatar({
   const medida = medidas[tamano];
   const pokemon = persona.avatarNombre ?? nombrePokemon(persona.pokemonId);
 
+  const circuloPokemon = (
+    <span className={cn(circulo, "bg-crema-2", medida)} title={pokemon}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={spritePokemon(persona.pokemonId)}
+        alt={pokemon}
+        loading="lazy"
+        className={sprite}
+        referrerPolicy="no-referrer"
+      />
+    </span>
+  );
+
   if (!persona.trainerKey) {
-    return (
-      <span
-        className={cn(
-          "grid shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-tinta bg-blanco shadow-dura-sm",
-          medida.caja,
-          className,
-        )}
-        title={pokemon}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={spritePokemon(persona.pokemonId)}
-          alt={pokemon}
-          loading="lazy"
-          className="size-[86%] object-contain [image-rendering:pixelated]"
-          referrerPolicy="no-referrer"
-        />
-      </span>
-    );
+    return <span className={cn("inline-flex", className)}>{circuloPokemon}</span>;
   }
 
   return (
-    <span className={cn("relative inline-block shrink-0", medida.caja, className)}>
-      <span
-        className={cn(
-          "grid size-full place-items-center overflow-hidden rounded-full border-[3px] border-tinta bg-blanco shadow-dura-sm",
-        )}
-      >
+    <span className={cn("inline-flex shrink-0 items-center", className)}>
+      <span className={cn(circulo, "bg-blanco", medida)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={urlEntrenador(persona.trainerKey)}
           alt=""
           loading="lazy"
-          className="size-[88%] object-contain [image-rendering:pixelated]"
+          className={sprite}
           referrerPolicy="no-referrer"
         />
       </span>
-
-      <span
-        className={cn(
-          "absolute -bottom-1 -right-1 grid place-items-center overflow-hidden rounded-full border-tinta bg-crema-2",
-          medida.insignia,
-          medida.borde,
-        )}
-        title={pokemon}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={spritePokemon(persona.pokemonId)}
-          alt={pokemon}
-          loading="lazy"
-          className="size-[92%] object-contain [image-rendering:pixelated]"
-          referrerPolicy="no-referrer"
-        />
-      </span>
+      {/* Se encima tantito para que se lean como pareja, no como dos cosas */}
+      <span className="-ml-2">{circuloPokemon}</span>
     </span>
   );
 }
 
-/** Solo el entrenador, para el perfil y el encabezado. */
+/** Solo el entrenador, para el perfil. */
 export function AvatarEntrenador({
   trainerKey,
   tamano = "md",
@@ -107,20 +86,14 @@ export function AvatarEntrenador({
   className?: string;
 }) {
   return (
-    <span
-      className={cn(
-        "grid shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-tinta bg-blanco shadow-dura-sm",
-        medidas[tamano].caja,
-        className,
-      )}
-    >
+    <span className={cn(circulo, "bg-blanco", medidas[tamano], className)}>
       {trainerKey ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={urlEntrenador(trainerKey)}
           alt=""
           loading="lazy"
-          className="size-[88%] object-contain [image-rendering:pixelated]"
+          className={sprite}
           referrerPolicy="no-referrer"
         />
       ) : (
