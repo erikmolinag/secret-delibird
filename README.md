@@ -38,7 +38,8 @@ Es un emparejamiento perfecto en un grafo bipartito (quien da → quien recibe):
 60 personas con 15 parejas excluidas se resuelven en unos 20 ms.
 
 ```bash
-npm test     # 11 pruebas del motor, con node --test
+npm test             # 11 pruebas del motor, con node --test
+npm run mail:preview # escribe los 4 correos en public/correos/ para verlos
 ```
 
 ## Stack

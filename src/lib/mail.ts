@@ -48,22 +48,33 @@ export async function enviarCorreo(correo: Correo) {
   }
 }
 
-const ROJO = "#d7263d";
-const VERDE = "#0f5132";
-const CREMA = "#fff8ec";
+// Los mismos colores que la app (ver globals.css). Aquí van a mano porque un
+// correo no carga hojas de estilo: todo tiene que ir en línea.
+const TINTA = "#16304b";
+const ROJO = "#ee1515";
+const AMARILLO = "#ffcb05";
+const AMARILLO_CLARO = "#ffeeab";
+const CREMA = "#fff6e6";
+const GRIS = "#5b7390";
+
+const DELIBIRD =
+  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/225.png";
 
 function cascaron(titulo: string, cuerpo: string) {
   return `<!doctype html>
-<html lang="es"><body style="margin:0;padding:24px;background:${CREMA};font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b2430">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:2px solid ${VERDE};border-radius:16px;overflow:hidden">
-    <tr><td style="background:${VERDE};padding:18px 24px;color:#ffffff;font-size:18px;font-weight:700">
-      Secret Delibird
+<html lang="es"><body style="margin:0;padding:24px 12px;background:${CREMA};font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:${TINTA}">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:3px solid ${TINTA};border-radius:20px;overflow:hidden">
+    <tr><td style="background:${TINTA};padding:14px 20px;font-size:19px;font-weight:800">
+      <span style="color:#ffffff">Secret </span><span style="color:${AMARILLO}">Delibird</span>
     </td></tr>
-    <tr><td style="padding:24px">
-      <h1 style="margin:0 0 12px;font-size:22px;color:${ROJO}">${titulo}</h1>
+    <tr><td style="height:7px;background:${ROJO};font-size:0;line-height:0">&nbsp;</td></tr>
+    <tr><td style="height:3px;background:${TINTA};font-size:0;line-height:0">&nbsp;</td></tr>
+    <tr><td style="padding:22px 20px 26px">
+      <img src="${DELIBIRD}" width="96" height="96" alt="" style="display:block;margin:0 0 6px">
+      <h1 style="margin:0 0 14px;font-size:23px;line-height:1.2;color:${TINTA}">${titulo}</h1>
       ${cuerpo}
     </td></tr>
-    <tr><td style="padding:16px 24px;background:${CREMA};font-size:12px;color:#6b7280">
+    <tr><td style="padding:14px 20px;background:${CREMA};border-top:3px solid ${TINTA};font-size:12px;color:${GRIS}">
       Intercambio de regalos estilo Pokémon. Si no esperabas este correo, ignóralo.
     </td></tr>
   </table>
@@ -71,7 +82,7 @@ function cascaron(titulo: string, cuerpo: string) {
 }
 
 function boton(url: string, texto: string) {
-  return `<p style="margin:24px 0"><a href="${url}" style="background:${ROJO};color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:700;display:inline-block">${texto}</a></p>`;
+  return `<p style="margin:24px 0"><a href="${url}" style="background:${ROJO};color:#ffffff;text-decoration:none;padding:13px 24px;border:3px solid ${TINTA};border-radius:999px;font-weight:800;display:inline-block">${texto}</a></p>`;
 }
 
 export function plantillaMagicLink(url: string, minutos: number) {
@@ -79,7 +90,7 @@ export function plantillaMagicLink(url: string, minutos: number) {
     "Tu acceso llegó volando",
     `<p>Delibird te trae tu enlace de acceso. Vence en ${minutos} minutos y solo sirve una vez.</p>
      ${boton(url, "Entrar a Secret Delibird")}
-     <p style="font-size:12px;color:#6b7280;word-break:break-all">O pega esta dirección en tu navegador:<br>${url}</p>`,
+     <p style="font-size:12px;color:${GRIS};word-break:break-all">O pega esta dirección en tu navegador:<br>${url}</p>`,
   );
   const text = `Tu enlace de acceso a Secret Delibird (vence en ${minutos} minutos, un solo uso):\n\n${url}\n`;
   return { subject: "Tu acceso a Secret Delibird", html, text };
@@ -108,10 +119,10 @@ export function plantillaInvitacion(opciones: {
     `Te invitaron a ${opciones.evento}`,
     `<p>${opciones.anfitrion} te invitó a su intercambio de regalos.</p>
      ${datos ? `<ul style="padding-left:18px;line-height:1.7">${datos}</ul>` : ""}
-     ${opciones.mensaje ? `<p style="background:${CREMA};padding:12px;border-radius:12px">${opciones.mensaje}</p>` : ""}
+     ${opciones.mensaje ? `<p style="background:${AMARILLO_CLARO};border:2px solid ${TINTA};padding:12px 14px;border-radius:14px">${opciones.mensaje}</p>` : ""}
      <p>Entra para armar tu lista de deseos: pega links de lo que te gustaría y quien te regale va a ver las fotos.</p>
      ${boton(opciones.url, "Armar mi lista de deseos")}
-     <p style="font-size:12px;color:#6b7280">El enlace es tuyo y vence en un rato. Si caduca, pide otro desde la página.</p>`,
+     <p style="font-size:12px;color:${GRIS}">El enlace es tuyo y vence en un rato. Si caduca, pide otro desde la página.</p>`,
   );
 
   const text = `${opciones.anfitrion} te invitó a "${opciones.evento}" en Secret Delibird.

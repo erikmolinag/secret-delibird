@@ -42,3 +42,6 @@ next-env.d.ts
 
 # pero el ejemplo si se comparte
 !.env.example
+
+# vista previa de correos
+public/correos/
