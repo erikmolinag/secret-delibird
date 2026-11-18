@@ -205,7 +205,7 @@ export default async function PanelEvento({
             >
               <Avatar persona={invitado} tamano="sm" />
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 basis-40">
                 <p className="truncate font-bold">
                   {nombreVisible(invitado)}
                   {invitado.isOrganizer ? (
@@ -217,7 +217,7 @@ export default async function PanelEvento({
                 <p className="truncate text-xs text-gris">{invitado.email}</p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto">
                 {!invitado.isPlaying ? (
                   <Insignia tono="alerta">Fuera del sorteo</Insignia>
                 ) : null}
@@ -233,7 +233,7 @@ export default async function PanelEvento({
                 )}
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="ml-auto flex items-center gap-1">
                 {evento.status === "draft" ? (
                   <form action={alternarJuegaAccion}>
                     <input type="hidden" name="eventId" value={evento.id} />
@@ -298,25 +298,64 @@ export default async function PanelEvento({
         </ul>
 
         <TarjetaCuerpo className="border-t-[3px] border-tinta">
-          <form action={agregarInvitadosAccion} className="space-y-3">
+          <form action={agregarInvitadosAccion} className="space-y-4">
             <input type="hidden" name="eventId" value={evento.id} />
-            <Campo
-              etiqueta="Agregar invitados"
-              htmlFor="invitados"
-              pista="Uno por línea. Acepta solo el correo o 'Nombre <correo@dominio.com>'."
-            >
-              <AreaTexto
-                id="invitados"
-                name="invitados"
-                required
-                placeholder={"ana@correo.com\nLuis Pérez <luis@correo.com>"}
-              />
-            </Campo>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Campo
+                etiqueta="Nombre"
+                htmlFor="invitado-nombre"
+                pista="Opcional: si lo dejas vacío lo sacamos del correo."
+              >
+                <Entrada
+                  id="invitado-nombre"
+                  name="name"
+                  maxLength={60}
+                  placeholder="Tía Mary"
+                />
+              </Campo>
+
+              <Campo etiqueta="Correo" htmlFor="invitado-correo">
+                <Entrada
+                  id="invitado-correo"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="mary@correo.com"
+                />
+              </Campo>
+            </div>
+
             <BotonEnvio variante="secundario" cargando="Agregando...">
               <UserPlus className="size-4" />
               Agregar a la lista
             </BotonEnvio>
           </form>
+
+          <details className="mt-4 rounded-2xl border-[3px] border-tinta bg-crema px-4 py-3">
+            <summary className="cursor-pointer font-display text-sm font-extrabold text-azul-oscuro">
+              Pegar varios de golpe
+            </summary>
+
+            <form action={agregarInvitadosAccion} className="mt-3 space-y-3">
+              <input type="hidden" name="eventId" value={evento.id} />
+              <Campo
+                etiqueta="Lista de invitados"
+                htmlFor="invitados"
+                pista="Uno por línea. Acepta solo el correo o 'Nombre <correo@dominio.com>'."
+              >
+                <AreaTexto
+                  id="invitados"
+                  name="invitados"
+                  required
+                  placeholder={"ana@correo.com\nLuis Pérez <luis@correo.com>"}
+                />
+              </Campo>
+              <BotonEnvio variante="fantasma" tamano="sm" cargando="Agregando...">
+                Agregar todos
+              </BotonEnvio>
+            </form>
+          </details>
         </TarjetaCuerpo>
       </Tarjeta>
 

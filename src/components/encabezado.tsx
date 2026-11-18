@@ -1,10 +1,6 @@
-import { LogOut } from "lucide-react";
-import Link from "next/link";
 import { Suspense } from "react";
 
-import { cerrarSesionAccion } from "@/actions/auth";
 import { FranjaPokebola } from "@/components/adornos";
-import { AvatarEntrenador } from "@/components/avatar";
 import { Marca } from "@/components/marca";
 import { BotonLink } from "@/components/ui/boton";
 import { usuarioActual } from "@/lib/auth";
@@ -14,7 +10,7 @@ export function Encabezado() {
   return (
     <header className="sticky top-0 z-20">
       <div className="border-b-[3px] border-tinta bg-blanco">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
           <Marca />
           <nav className="flex min-h-10 items-center gap-2">
             <Suspense fallback={null}>
@@ -39,31 +35,15 @@ async function NavUsuario() {
     );
   }
 
+  // Salir vive dentro del perfil: en el teléfono no cabe un tercer botón.
   return (
     <>
-      <Link
-        href="/perfil"
-        title={`Mi perfil (${usuario.name ?? usuario.email})`}
-        className="transition hover:-translate-y-0.5"
-      >
-        <AvatarEntrenador trainerKey={usuario.trainerKey} tamano="xs" />
-        <span className="sr-only">Mi perfil</span>
-      </Link>
-
       <BotonLink href="/eventos" variante="fantasma" tamano="sm">
-        <span className="sm:hidden">Eventos</span>
-        <span className="hidden sm:inline">Mis eventos</span>
+        Eventos
       </BotonLink>
-      <form action={cerrarSesionAccion}>
-        <button
-          type="submit"
-          title={`Salir (${usuario.email})`}
-          className="grid size-10 place-items-center rounded-full border-[3px] border-tinta bg-blanco text-tinta shadow-dura-sm transition hover:bg-rojo-claro hover:text-rojo active:translate-y-[3px] active:shadow-none"
-        >
-          <LogOut className="size-4" />
-          <span className="sr-only">Salir</span>
-        </button>
-      </form>
+      <BotonLink href="/perfil" variante="fantasma" tamano="sm">
+        Perfil
+      </BotonLink>
     </>
   );
 }

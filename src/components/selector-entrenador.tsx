@@ -56,7 +56,7 @@ export function SelectorEntrenador({ inicial }: { inicial: string | null }) {
                     src={urlEntrenador(entrenador.clave)}
                     alt={entrenador.nombre}
                     loading="lazy"
-                    className="h-24 w-full object-contain [image-rendering:pixelated] sm:h-20"
+                    className="h-28 w-full object-contain [image-rendering:pixelated] sm:h-24"
                     referrerPolicy="no-referrer"
                   />
                   <span className="text-xs font-bold">{entrenador.nombre}</span>

@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 // Los sprites son de 96px: pintarlos a 44 los desperdicia. En movil van aun
 // mas grandes, que es donde sobra ancho.
 const medidas = {
-  xs: { caja: "size-10", insignia: "size-5", borde: "border-2" },
-  sm: { caja: "size-16 sm:size-14", insignia: "size-8 sm:size-7", borde: "border-2" },
-  md: { caja: "size-20 sm:size-[72px]", insignia: "size-9", borde: "border-2" },
-  lg: { caja: "size-28 sm:size-24", insignia: "size-12 sm:size-11", borde: "border-[3px]" },
-  xl: { caja: "size-36 sm:size-32", insignia: "size-14", borde: "border-[3px]" },
+  xs: { caja: "size-11", insignia: "size-6", borde: "border-2" },
+  sm: { caja: "size-20 sm:size-16", insignia: "size-10 sm:size-8", borde: "border-2" },
+  md: { caja: "size-24 sm:size-20", insignia: "size-11 sm:size-9", borde: "border-2" },
+  lg: { caja: "size-32 sm:size-28", insignia: "size-14 sm:size-12", borde: "border-[3px]" },
+  xl: { caja: "size-40 sm:size-36", insignia: "size-16 sm:size-14", borde: "border-[3px]" },
 } as const;
 
 export type PersonaConAvatar = {

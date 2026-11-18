@@ -115,11 +115,22 @@ export async function actualizarEventoAccion(datos: FormData) {
 export async function agregarInvitadosAccion(datos: FormData) {
   const usuario = await requerirUsuario();
   const eventId = texto(datos, "eventId");
-  const lista = texto(datos, "invitados");
-  if (!eventId || !lista) return;
+  if (!eventId) return;
 
   const evento = await eventoDelOrganizador(eventId, usuario.id);
   if (!evento) return;
+
+  // Dos formas de agregar: de uno en uno (nombre y correo aparte) o pegando
+  // una lista. Las dos acaban en el mismo parser.
+  const correo = texto(datos, "email");
+  const nombre = texto(datos, "name");
+  const lista = correo
+    ? nombre
+      ? `${nombre} <${correo}>`
+      : correo
+    : texto(datos, "invitados");
+
+  if (!lista) return;
 
   const { invitados } = parsearInvitados(lista);
   if (!invitados.length) return;
