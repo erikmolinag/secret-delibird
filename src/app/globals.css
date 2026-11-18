@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  /* Noche navidena */
+  --color-noche: #071320;
+  --color-noche-suave: #0e2135;
+  --color-noche-borde: #1c3b56;
+
+  /* Pino y rojo de temporada */
+  --color-pino: #0f5132;
+  --color-pino-claro: #1f7a4d;
+  --color-rojo: #e23a4e;
+  --color-rojo-oscuro: #b3122a;
+
+  /* Acentos */
+  --color-dorado: #f4c95d;
+  --color-hielo: #9fd8ef;
+  --color-nieve: #f4f9ff;
+  --color-humo: #a9bed2;
+
+  --font-display: var(--font-baloo), ui-rounded, system-ui, sans-serif;
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-tarjeta: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
+  --shadow-brillo: 0 0 0 1px rgba(159, 216, 239, 0.18);
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-noche);
+    background-image:
+      radial-gradient(900px 500px at 15% -10%, rgba(31, 122, 77, 0.25), transparent 70%),
+      radial-gradient(800px 480px at 85% 0%, rgba(226, 58, 78, 0.18), transparent 70%),
+      radial-gradient(700px 700px at 50% 110%, rgba(159, 216, 239, 0.12), transparent 70%);
+    background-attachment: fixed;
+    color: var(--color-nieve);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  .display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: var(--color-dorado);
+    color: #1b2430;
+  }
+
+  *:focus-visible {
+    outline: 2px solid var(--color-dorado);
+    outline-offset: 2px;
+  }
+}
+
+/* Franja tipo pokebola para encabezados */
+@utility franja-pokebola {
+  background: linear-gradient(
+    to bottom,
+    var(--color-rojo) 0 48%,
+    #1b2430 48% 52%,
+    var(--color-nieve) 52% 100%
+  );
+}
+
+/* Nieve cayendo */
+.copo {
+  position: absolute;
+  top: -5vh;
+  border-radius: 999px;
+  background: #ffffff;
+  filter: blur(0.3px);
+  animation-name: caer;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes caer {
+  0% {
+    transform: translate3d(0, -5vh, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: var(--copo-opacidad, 0.7);
+  }
+  90% {
+    opacity: var(--copo-opacidad, 0.7);
+  }
+  100% {
+    transform: translate3d(var(--copo-deriva, 12px), 105vh, 0);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copo {
+    animation: none;
+    opacity: 0.25;
+  }
+}

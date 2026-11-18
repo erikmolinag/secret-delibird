@@ -1,0 +1,73 @@
+"use client";
+
+import { Mail } from "lucide-react";
+import { useActionState } from "react";
+
+import { solicitarAccesoAccion, type EstadoAcceso } from "@/actions/auth";
+import { BotonEnvio } from "@/components/ui/boton-envio";
+import { Campo, Entrada } from "@/components/ui/campo";
+
+const INICIAL: EstadoAcceso = {};
+
+export function FormularioAcceso({ redirectTo }: { redirectTo?: string }) {
+  const [estado, accion] = useActionState(solicitarAccesoAccion, INICIAL);
+
+  if (estado.ok) {
+    return (
+      <div className="space-y-4 text-center">
+        <Mail className="mx-auto size-10 text-dorado" />
+        <h2 className="text-2xl font-bold">Revisa tu correo</h2>
+        <p className="text-sm text-humo">
+          Delibird va en camino a <strong className="text-nieve">{estado.email}</strong>{" "}
+          con tu enlace de acceso. Vence en 20 minutos y solo sirve una vez.
+        </p>
+
+        {estado.enlaceDev ? (
+          <div className="rounded-2xl border border-dorado/40 bg-dorado/10 p-4 text-left">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-dorado">
+              Modo desarrollo: no hay RESEND_API_KEY
+            </p>
+            <a
+              href={estado.enlaceDev}
+              className="break-all text-sm text-hielo underline underline-offset-2"
+            >
+              {estado.enlaceDev}
+            </a>
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <form action={accion} className="space-y-5">
+      {redirectTo ? <input type="hidden" name="redirectTo" value={redirectTo} /> : null}
+
+      <Campo
+        etiqueta="Tu correo"
+        htmlFor="email"
+        pista="Te mandamos un enlace de un clic. No hay contraseñas que recordar."
+      >
+        <Entrada
+          id="email"
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          autoFocus
+          placeholder="tu@correo.com"
+        />
+      </Campo>
+
+      {estado.error ? (
+        <p className="rounded-2xl border border-rojo/40 bg-rojo/10 px-4 py-2.5 text-sm text-[#ff9aa6]">
+          {estado.error}
+        </p>
+      ) : null}
+
+      <BotonEnvio className="w-full" cargando="Enviando a Delibird...">
+        Mandarme el enlace
+      </BotonEnvio>
+    </form>
+  );
+}

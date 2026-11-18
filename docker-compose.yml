@@ -1,0 +1,22 @@
+# Postgres local para desarrollo. En produccion usamos Neon (misma version mayor).
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: secret-delibird-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: delibird
+      POSTGRES_PASSWORD: delibird
+      POSTGRES_DB: secret_delibird
+    ports:
+      - "5433:5432"
+    volumes:
+      - delibird-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U delibird -d secret_delibird"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  delibird-pgdata:

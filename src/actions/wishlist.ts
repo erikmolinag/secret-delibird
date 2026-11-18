@@ -1,0 +1,100 @@
+"use server";
+
+import { and, eq } from "drizzle-orm";
+import { refresh } from "next/cache";
+
+import { db, schema } from "@/db";
+import { requerirUsuario } from "@/lib/auth";
+import { participanteDelUsuario } from "@/lib/datos";
+import { obtenerPreview, type Preview } from "@/lib/og";
+
+function texto(datos: FormData, campo: string) {
+  const valor = datos.get(campo);
+  return typeof valor === "string" && valor.trim() ? valor.trim() : null;
+}
+
+/** Lo llama el formulario al pegar un link, antes de guardar. */
+export async function previsualizarLinkAccion(url: string): Promise<Preview | null> {
+  await requerirUsuario();
+  return obtenerPreview(url);
+}
+
+export async function agregarDeseoAccion(datos: FormData) {
+  const usuario = await requerirUsuario();
+  const participantId = texto(datos, "participantId");
+  if (!participantId) return;
+
+  const fila = await participanteDelUsuario(participantId, usuario);
+  if (!fila) return;
+
+  const url = texto(datos, "url");
+  const titulo = texto(datos, "title") ?? (url ? "Regalo sorpresa" : null);
+  if (!titulo) return;
+
+  const imagenManual = texto(datos, "imageUrl");
+  const imagenScrape = texto(datos, "scrapedImageUrl");
+  const prioridad = Number.parseInt(texto(datos, "priority") ?? "2", 10);
+
+  await db.insert(schema.wishlistItems).values({
+    participantId,
+    url,
+    title: titulo.slice(0, 160),
+    note: texto(datos, "note")?.slice(0, 500) ?? null,
+    price: texto(datos, "price")?.slice(0, 40) ?? null,
+    siteName: texto(datos, "siteName"),
+    imageUrl: imagenManual ?? imagenScrape,
+    imageSource: imagenManual ? "manual" : imagenScrape ? "scraped" : "none",
+    priority: [1, 2, 3].includes(prioridad) ? prioridad : 2,
+  });
+
+  await db
+    .update(schema.participants)
+    .set({ wishlistUpdatedAt: new Date() })
+    .where(eq(schema.participants.id, participantId));
+
+  refresh();
+}
+
+export async function eliminarDeseoAccion(datos: FormData) {
+  const usuario = await requerirUsuario();
+  const participantId = texto(datos, "participantId");
+  const itemId = texto(datos, "itemId");
+  if (!participantId || !itemId) return;
+
+  const fila = await participanteDelUsuario(participantId, usuario);
+  if (!fila) return;
+
+  await db
+    .delete(schema.wishlistItems)
+    .where(
+      and(
+        eq(schema.wishlistItems.id, itemId),
+        eq(schema.wishlistItems.participantId, participantId),
+      ),
+    );
+
+  refresh();
+}
+
+export async function cambiarPrioridadAccion(datos: FormData) {
+  const usuario = await requerirUsuario();
+  const participantId = texto(datos, "participantId");
+  const itemId = texto(datos, "itemId");
+  const prioridad = Number.parseInt(texto(datos, "priority") ?? "", 10);
+  if (!participantId || !itemId || ![1, 2, 3].includes(prioridad)) return;
+
+  const fila = await participanteDelUsuario(participantId, usuario);
+  if (!fila) return;
+
+  await db
+    .update(schema.wishlistItems)
+    .set({ priority: prioridad, updatedAt: new Date() })
+    .where(
+      and(
+        eq(schema.wishlistItems.id, itemId),
+        eq(schema.wishlistItems.participantId, participantId),
+      ),
+    );
+
+  refresh();
+}
