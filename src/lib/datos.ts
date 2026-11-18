@@ -1,6 +1,15 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  isNotNull,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db, schema } from "@/db";
@@ -39,8 +48,12 @@ export async function eventoDelOrganizador(eventId: string, userId: string) {
 
 export async function invitadosDelEvento(eventId: string) {
   return db
-    .select()
+    .select({
+      ...getTableColumns(schema.participants),
+      trainerKey: schema.users.trainerKey,
+    })
     .from(schema.participants)
+    .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
     .where(eq(schema.participants.eventId, eventId))
     .orderBy(desc(schema.participants.isOrganizer), asc(schema.participants.name));
 }
@@ -51,9 +64,16 @@ export async function participanteDelUsuario(
   usuario: { id: string; email: string },
 ) {
   const [fila] = await db
-    .select({ participante: schema.participants, evento: schema.events })
+    .select({
+      participante: {
+        ...getTableColumns(schema.participants),
+        trainerKey: schema.users.trainerKey,
+      },
+      evento: schema.events,
+    })
     .from(schema.participants)
     .innerJoin(schema.events, eq(schema.events.id, schema.participants.eventId))
+    .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
     .where(eq(schema.participants.id, participantId))
     .limit(1);
 
@@ -78,8 +98,12 @@ export async function reglasDelEvento(eventId: string) {
 /** Los que entran al sorteo. */
 export async function jugadoresDelEvento(eventId: string) {
   return db
-    .select()
+    .select({
+      ...getTableColumns(schema.participants),
+      trainerKey: schema.users.trainerKey,
+    })
     .from(schema.participants)
+    .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
     .where(
       and(
         eq(schema.participants.eventId, eventId),
@@ -112,13 +136,17 @@ export async function aQuienLeRegala(participantId: string) {
   const [fila] = await db
     .select({
       asignacion: schema.assignments,
-      receptor: schema.participants,
+      receptor: {
+        ...getTableColumns(schema.participants),
+        trainerKey: schema.users.trainerKey,
+      },
     })
     .from(schema.assignments)
     .innerJoin(
       schema.participants,
       eq(schema.participants.id, schema.assignments.receiverId),
     )
+    .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
     .where(eq(schema.assignments.giverId, participantId))
     .limit(1);
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { DELIBIRD_ID, spritePokemon } from "@/lib/pokemon";
+import { Pokebola } from "@/components/adornos";
 import { cn } from "@/lib/utils";
 
 export function Marca({
@@ -15,20 +15,12 @@ export function Marca({
       href="/"
       className={cn("group inline-flex items-center gap-2.5", className)}
     >
-      <span
+      <Pokebola
         className={cn(
-          "grid shrink-0 place-items-center rounded-full border-[3px] border-tinta bg-blanco shadow-dura-sm transition group-hover:-rotate-6",
+          "shrink-0 drop-shadow-[0_3px_0_#16304b] transition group-hover:-rotate-12",
           tamano === "lg" ? "size-16" : "size-11",
         )}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={spritePokemon(DELIBIRD_ID)}
-          alt="Delibird"
-          className="size-[88%] object-contain [image-rendering:pixelated]"
-          referrerPolicy="no-referrer"
-        />
-      </span>
+      />
 
       <span
         className={cn(

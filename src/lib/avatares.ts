@@ -1,11 +1,8 @@
 /**
- * Avatares: sprite de Pokemon (PokeAPI) o sprite de entrenador (Pokemon Showdown).
- * Ninguno de los dos necesita API key ni guardar imagenes.
+ * Sprites de entrenador (Pokemon Showdown). Son la foto del perfil: una por
+ * persona, la misma en todos los intercambios. El Pokemon de cada evento vive
+ * aparte, en lib/pokemon.ts.
  */
-
-import { nombrePokemon, spritePokemon } from "@/lib/pokemon";
-
-export type TipoAvatar = "pokemon" | "entrenador";
 
 export type Entrenador = {
   clave: string;
@@ -70,24 +67,4 @@ export function urlEntrenador(clave: string) {
 export function nombreEntrenador(clave: string | null) {
   if (!clave) return "Entrenador";
   return ENTRENADORES.find((e) => e.clave === clave)?.nombre ?? "Entrenador";
-}
-
-type ConAvatar = {
-  avatarKind: TipoAvatar;
-  pokemonId: number;
-  trainerKey: string | null;
-  avatarNombre: string | null;
-};
-
-export function urlAvatar(p: ConAvatar) {
-  return p.avatarKind === "entrenador" && p.trainerKey
-    ? urlEntrenador(p.trainerKey)
-    : spritePokemon(p.pokemonId);
-}
-
-export function nombreAvatar(p: ConAvatar) {
-  if (p.avatarNombre) return p.avatarNombre;
-  return p.avatarKind === "entrenador"
-    ? nombreEntrenador(p.trainerKey)
-    : nombrePokemon(p.pokemonId);
 }

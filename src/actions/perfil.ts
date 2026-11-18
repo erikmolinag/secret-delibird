@@ -8,43 +8,53 @@ import { requerirUsuario } from "@/lib/auth";
 import { ENTRENADORES } from "@/lib/avatares";
 import { participanteDelUsuario } from "@/lib/datos";
 
-type Eleccion =
-  | { participantId: string; tipo: "entrenador"; clave: string }
-  | { participantId: string; tipo: "pokemon"; pokemonId: number; nombre: string };
+function texto(datos: FormData, campo: string) {
+  const valor = datos.get(campo);
+  return typeof valor === "string" && valor.trim() ? valor.trim() : null;
+}
 
-/** Cada quien elige su sprite: un entrenador o cualquier Pokemon de la Pokedex. */
-export async function cambiarAvatarAccion(eleccion: Eleccion) {
+/**
+ * El perfil es general: tu nombre de entrenador y tu sprite de entrenador se
+ * ven igual en todos los intercambios en los que estés.
+ */
+export async function actualizarPerfilAccion(datos: FormData) {
+  const usuario = await requerirUsuario();
+
+  const nombre = texto(datos, "name");
+  const clave = texto(datos, "trainerKey");
+  const entrenador = clave
+    ? (ENTRENADORES.find((e) => e.clave === clave)?.clave ?? null)
+    : null;
+
+  await db
+    .update(schema.users)
+    .set({
+      name: nombre?.slice(0, 60) ?? usuario.name,
+      trainerKey: entrenador,
+    })
+    .where(eq(schema.users.id, usuario.id));
+
+  refresh();
+}
+
+/** El Pokémon sí es de cada evento: puedes llevar uno distinto a cada uno. */
+export async function cambiarPokemonAccion(eleccion: {
+  participantId: string;
+  pokemonId: number;
+  nombre: string;
+}) {
   const usuario = await requerirUsuario();
 
   const fila = await participanteDelUsuario(eleccion.participantId, usuario);
   if (!fila) return { ok: false as const };
 
-  if (eleccion.tipo === "entrenador") {
-    const entrenador = ENTRENADORES.find((e) => e.clave === eleccion.clave);
-    if (!entrenador) return { ok: false as const };
+  const id = Math.trunc(eleccion.pokemonId);
+  if (!Number.isFinite(id) || id < 1 || id > 1025) return { ok: false as const };
 
-    await db
-      .update(schema.participants)
-      .set({
-        avatarKind: "entrenador",
-        trainerKey: entrenador.clave,
-        avatarNombre: entrenador.nombre,
-      })
-      .where(eq(schema.participants.id, eleccion.participantId));
-  } else {
-    const id = Math.trunc(eleccion.pokemonId);
-    if (!Number.isFinite(id) || id < 1 || id > 1025) return { ok: false as const };
-
-    await db
-      .update(schema.participants)
-      .set({
-        avatarKind: "pokemon",
-        pokemonId: id,
-        trainerKey: null,
-        avatarNombre: eleccion.nombre.slice(0, 40),
-      })
-      .where(eq(schema.participants.id, eleccion.participantId));
-  }
+  await db
+    .update(schema.participants)
+    .set({ pokemonId: id, avatarNombre: eleccion.nombre.slice(0, 40) })
+    .where(eq(schema.participants.id, eleccion.participantId));
 
   refresh();
   return { ok: true as const };

@@ -1,8 +1,10 @@
 import { LogOut } from "lucide-react";
+import Link from "next/link";
 import { Suspense } from "react";
 
 import { cerrarSesionAccion } from "@/actions/auth";
 import { FranjaPokebola } from "@/components/adornos";
+import { AvatarEntrenador } from "@/components/avatar";
 import { Marca } from "@/components/marca";
 import { BotonLink } from "@/components/ui/boton";
 import { usuarioActual } from "@/lib/auth";
@@ -39,6 +41,15 @@ async function NavUsuario() {
 
   return (
     <>
+      <Link
+        href="/perfil"
+        title={`Mi perfil (${usuario.name ?? usuario.email})`}
+        className="transition hover:-translate-y-0.5"
+      >
+        <AvatarEntrenador trainerKey={usuario.trainerKey} tamano="sm" />
+        <span className="sr-only">Mi perfil</span>
+      </Link>
+
       <BotonLink href="/eventos" variante="fantasma" tamano="sm">
         Mis eventos
       </BotonLink>

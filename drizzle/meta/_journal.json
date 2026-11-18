@@ -15,6 +15,13 @@
       "when": 1795035177554,
       "tag": "0001_liga_del_mapa",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795037372613,
+      "tag": "0002_perfil_entrenador",
+      "breakpoints": true
     }
   ]
 }

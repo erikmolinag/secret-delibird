@@ -16,7 +16,7 @@ import { alternarCompradoAccion } from "@/actions/regalos";
 import { editarDeseoAccion, eliminarDeseoAccion } from "@/actions/wishlist";
 import { Acebo } from "@/components/adornos";
 import { Avatar } from "@/components/avatar";
-import { SelectorAvatar } from "@/components/selector-avatar";
+import { SelectorPokemon } from "@/components/selector-pokemon";
 import { FormularioDeseo } from "@/components/formulario-deseo";
 import { Boton } from "@/components/ui/boton";
 import { Insignia } from "@/components/ui/insignia";
@@ -29,8 +29,8 @@ import {
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
 import { requerirUsuario } from "@/lib/auth";
-import { nombreAvatar } from "@/lib/avatares";
 import { enlaceCalendario, enlaceMapa } from "@/lib/enlaces";
+import { nombrePokemon } from "@/lib/pokemon";
 import {
   aQuienLeRegala,
   comprasDe,
@@ -146,10 +146,14 @@ export default async function MiEvento({
 
       <Tarjeta>
         <TarjetaEncabezado>
-          <TituloSeccion>Tu sprite</TituloSeccion>
+          <TituloSeccion>Tu Pokémon</TituloSeccion>
         </TarjetaEncabezado>
         <TarjetaCuerpo>
-          <SelectorAvatar participantId={participante.id} persona={participante} />
+          <SelectorPokemon
+            participantId={participante.id}
+            pokemonId={participante.pokemonId}
+            nombre={participante.avatarNombre}
+          />
         </TarjetaCuerpo>
       </Tarjeta>
 
@@ -168,7 +172,10 @@ export default async function MiEvento({
                   {asignado.receptor.name}
                 </p>
                 <p className="text-sm font-semibold text-gris">
-                  Anda como {nombreAvatar(asignado.receptor)} en este intercambio.
+                  Anda con{" "}
+                  {asignado.receptor.avatarNombre ??
+                    nombrePokemon(asignado.receptor.pokemonId)}{" "}
+                  en este intercambio.
                 </p>
               </div>
             </div>

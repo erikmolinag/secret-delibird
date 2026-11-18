@@ -210,7 +210,12 @@ Detalles que no se ven pero importan:
   privadas: cualquier invitado puede pegar una URL y el servidor la visita (SSRF).
 - Las imágenes de las listas se muestran con `<img>` y no con `next/image`: son
   de dominios arbitrarios y así no se gasta la cuota de optimización de Vercel.
-- Los avatares Pokémon se reparten sin repetir dentro del mismo evento, con un
+- La identidad va en dos niveles: el **perfil** (nombre y sprite de entrenador)
+  vive en `users` y es el mismo en todos los intercambios; el **Pokémon** vive en
+  `participants` y es de cada evento. Donde se pinta a alguien sale su entrenador
+  con el Pokémon de ese evento en una insignia al lado. Quien todavía no ha
+  entrado no tiene entrenador, así que sale solo su Pokémon.
+- Los Pokémon se reparten de entrada sin repetir dentro del mismo evento, con un
   PRNG sembrado con el id del evento (mismo evento, mismo reparto).
 - "Ya lo compré" vive en `reservations` y solo lo lee quien regala: la consulta
   de tu propia lista ni siquiera toca esa tabla, así que no hay forma de que se
