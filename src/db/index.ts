@@ -15,6 +15,9 @@ const pool =
     connectionString,
     max: 5,
     // Neon exige TLS; el Postgres local de Docker no lo tiene.
+    // Pedimos la verificación del certificado aquí y no con sslmode en la URL:
+    // en pg 9 'require' va a pasar a significar "cifra pero no verifiques", y
+    // esta opción explícita le gana a lo que diga la cadena de conexión.
     ssl: isLocal ? false : { rejectUnauthorized: true },
   });
 
