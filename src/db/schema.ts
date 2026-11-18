@@ -53,6 +53,8 @@ export const events = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     eventDate: timestamp("event_date", { withTimezone: true }),
     place: text("place"),
+    /** Liga del mapa, por si el nombre del lugar no basta para llegar. */
+    placeUrl: text("place_url"),
     budgetAmount: integer("budget_amount"),
     budgetCurrency: text("budget_currency").default("MXN").notNull(),
     message: text("message"),

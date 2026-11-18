@@ -30,6 +30,7 @@ import { BotonEnvio } from "@/components/ui/boton-envio";
 import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
 import { requerirUsuario } from "@/lib/auth";
 import { nombreAvatar } from "@/lib/avatares";
+import { enlaceCalendario, enlaceMapa } from "@/lib/enlaces";
 import {
   aQuienLeRegala,
   comprasDe,
@@ -73,12 +74,29 @@ export default async function MiEvento({
     evento.budgetCurrency,
   );
 
+  const mapa = enlaceMapa(evento.place, evento.placeUrl);
+  const calendario = enlaceCalendario({
+    titulo: evento.name,
+    inicio: evento.eventDate,
+    lugar: evento.place,
+    detalles: evento.message,
+  });
+
   const datosEvento = [
     evento.eventDate
-      ? { icono: CalendarDays, texto: formatearFecha(evento.eventDate)! }
+      ? {
+          icono: CalendarDays,
+          texto: formatearFecha(evento.eventDate)!,
+          url: calendario,
+          titulo: "Agregar al calendario",
+        }
       : null,
-    evento.place ? { icono: MapPin, texto: evento.place } : null,
-    presupuesto ? { icono: Coins, texto: presupuesto } : null,
+    evento.place
+      ? { icono: MapPin, texto: evento.place, url: mapa, titulo: "Ver cómo llegar" }
+      : null,
+    presupuesto
+      ? { icono: Coins, texto: presupuesto, url: null, titulo: undefined }
+      : null,
   ].filter((d) => d !== null);
 
   return (
@@ -93,15 +111,29 @@ export default async function MiEvento({
 
         {datosEvento.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
-            {datosEvento.map((dato) => (
-              <span
-                key={dato.texto}
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-tinta bg-crema-2 px-3 py-1 text-sm font-bold"
-              >
-                <dato.icono className="size-4 text-azul" />
-                {dato.texto}
-              </span>
-            ))}
+            {datosEvento.map((dato) =>
+              dato.url ? (
+                <a
+                  key={dato.texto}
+                  href={dato.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={dato.titulo}
+                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-tinta bg-crema-2 px-3 py-1 text-sm font-bold transition hover:bg-amarillo-claro"
+                >
+                  <dato.icono className="size-4 text-azul" />
+                  {dato.texto}
+                </a>
+              ) : (
+                <span
+                  key={dato.texto}
+                  className="inline-flex items-center gap-1.5 rounded-full border-2 border-tinta bg-crema-2 px-3 py-1 text-sm font-bold"
+                >
+                  <dato.icono className="size-4 text-azul" />
+                  {dato.texto}
+                </span>
+              ),
+            )}
           </div>
         ) : null}
 

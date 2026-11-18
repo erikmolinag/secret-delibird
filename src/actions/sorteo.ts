@@ -154,6 +154,9 @@ export async function sortearAccion(datos: FormData) {
       evento: evento.name,
       url,
       fecha: formatearFecha(evento.eventDate),
+      inicio: evento.eventDate,
+      lugar: evento.place,
+      lugarUrl: evento.placeUrl,
       presupuesto: formatearPresupuesto(evento.budgetAmount, evento.budgetCurrency),
     });
 

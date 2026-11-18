@@ -47,6 +47,7 @@ import {
   invitadosDelEvento,
   reglasDelEvento,
 } from "@/lib/datos";
+import { enlaceMapa } from "@/lib/enlaces";
 import { analizar, type ReglaSorteo } from "@/lib/sorteo";
 import {
   aValorInputFecha,
@@ -98,6 +99,7 @@ export default async function PanelEvento({
     ),
   );
 
+  const mapa = enlaceMapa(evento.place, evento.placeUrl);
   const yaSorteado = evento.status === "drawn";
   const parejas = yaSorteado && revelar ? await asignacionesDelEvento(id) : [];
   const yaCompraron = yaSorteado ? await cuantosYaCompraron(id) : 0;
@@ -118,7 +120,18 @@ export default async function PanelEvento({
               {evento.place ? (
                 <span className="flex items-center gap-1.5">
                   <MapPin className="size-4 text-azul" />
-                  {evento.place}
+                  {mapa ? (
+                    <a
+                      href={mapa}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-bold text-azul underline-offset-2 hover:underline"
+                    >
+                      {evento.place}
+                    </a>
+                  ) : (
+                    evento.place
+                  )}
                 </span>
               ) : null}
               {presupuesto ? (
@@ -443,6 +456,21 @@ export default async function PanelEvento({
                 />
               </Campo>
             </div>
+
+            <Campo
+              etiqueta="Liga del mapa"
+              htmlFor="editar-mapa"
+              pista="Si la dejas vacía, el correo lleva a una búsqueda del lugar en Google Maps."
+            >
+              <Entrada
+                id="editar-mapa"
+                name="placeUrl"
+                type="url"
+                defaultValue={evento.placeUrl ?? ""}
+                maxLength={500}
+                placeholder="https://maps.app.goo.gl/..."
+              />
+            </Campo>
 
             <div className="grid gap-5 sm:grid-cols-[1fr_140px]">
               <Campo etiqueta="Presupuesto sugerido" htmlFor="editar-monto">

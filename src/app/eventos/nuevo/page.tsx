@@ -53,6 +53,20 @@ export default async function NuevoEvento() {
               </Campo>
             </div>
 
+            <Campo
+              etiqueta="Liga del mapa"
+              htmlFor="placeUrl"
+              pista="Opcional. Si la dejas vacía, el correo lleva a una búsqueda del lugar en Google Maps."
+            >
+              <Entrada
+                id="placeUrl"
+                name="placeUrl"
+                type="url"
+                maxLength={500}
+                placeholder="https://maps.app.goo.gl/..."
+              />
+            </Campo>
+
             <div className="grid gap-5 sm:grid-cols-[1fr_140px]">
               <Campo
                 etiqueta="Presupuesto sugerido"
