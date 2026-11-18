@@ -35,7 +35,7 @@ export function Marca({
             "font-display font-extrabold text-azul-oscuro",
             grande
               ? "text-xl tracking-[0.2em] sm:text-4xl sm:tracking-normal"
-              : "text-[0.7rem] tracking-[0.22em] sm:text-2xl sm:tracking-normal",
+              : "text-sm tracking-[0.16em] sm:text-2xl sm:tracking-normal",
           )}
         >
           Secret
@@ -43,7 +43,7 @@ export function Marca({
         <span
           className={cn(
             "font-display font-extrabold",
-            grande ? "texto-logo text-4xl" : "texto-logo-sm text-2xl",
+            grande ? "texto-logo text-4xl" : "texto-logo-sm text-xl sm:text-2xl",
           )}
         >
           Delibird

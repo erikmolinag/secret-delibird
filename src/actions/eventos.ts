@@ -267,3 +267,20 @@ export async function alternarJuegaAccion(datos: FormData) {
 
   refresh();
 }
+
+/**
+ * Borra el evento entero: invitados, reglas, asignaciones, listas y fotos se
+ * van con el por las llaves foraneas. No hay vuelta atras.
+ */
+export async function eliminarEventoAccion(datos: FormData) {
+  const usuario = await requerirUsuario();
+  const eventId = texto(datos, "eventId");
+  if (!eventId) return;
+
+  const evento = await eventoDelOrganizador(eventId, usuario.id);
+  if (!evento) return;
+
+  await db.delete(schema.events).where(eq(schema.events.id, eventId));
+
+  redirect("/eventos");
+}

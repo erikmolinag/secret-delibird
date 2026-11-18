@@ -5,20 +5,17 @@ import {
   Gift,
   ImageOff,
   MapPin,
-  Pencil,
   ShoppingBag,
-  Trash2,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { alternarCompradoAccion } from "@/actions/regalos";
-import { editarDeseoAccion, eliminarDeseoAccion } from "@/actions/wishlist";
 import { Acebo } from "@/components/adornos";
 import { Avatar } from "@/components/avatar";
 import { SelectorPokemon } from "@/components/selector-pokemon";
 import { FormularioDeseo } from "@/components/formulario-deseo";
-import { Boton } from "@/components/ui/boton";
+import { ListaDeseos } from "@/components/lista-deseos";
 import { Insignia } from "@/components/ui/insignia";
 import {
   Tarjeta,
@@ -27,7 +24,6 @@ import {
   TituloSeccion,
 } from "@/components/ui/tarjeta";
 import { BotonEnvio } from "@/components/ui/boton-envio";
-import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
 import { requerirUsuario } from "@/lib/auth";
 import { enlaceCalendario, enlaceMapa } from "@/lib/enlaces";
 import { nombrePokemon } from "@/lib/pokemon";
@@ -311,163 +307,19 @@ export default async function MiEvento({
             Todavía no pides nada. Pega un link abajo y aparece la foto.
           </TarjetaCuerpo>
         ) : (
-          <ul className="grid gap-4 p-5 sm:grid-cols-2">
-            {deseos.map((deseo) => {
-              const ganas = GANAS[deseo.priority] ?? GANAS[2];
-              return (
-                <li
-                  key={deseo.id}
-                  className="flex gap-4 rounded-2xl border-[3px] border-tinta bg-crema p-3"
-                >
-                  {deseo.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={deseo.imageUrl}
-                      alt=""
-                      loading="lazy"
-                      className="size-24 shrink-0 rounded-xl border-2 border-tinta bg-blanco object-contain"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <span className="grid size-24 shrink-0 place-items-center rounded-xl border-2 border-tinta bg-blanco text-gris">
-                      <ImageOff className="size-6" />
-                    </span>
-                  )}
-
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-display font-extrabold leading-tight">
-                        {deseo.title}
-                      </h3>
-                      <form action={eliminarDeseoAccion}>
-                        <input
-                          type="hidden"
-                          name="participantId"
-                          value={participante.id}
-                        />
-                        <input type="hidden" name="itemId" value={deseo.id} />
-                        <Boton
-                          type="submit"
-                          variante="peligro"
-                          tamano="sm"
-                          title="Quitar de mi lista"
-                          className="px-2 py-1"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </Boton>
-                      </form>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Insignia tono={ganas.tono}>{ganas.texto}</Insignia>
-                      {deseo.price ? (
-                        <span className="text-sm font-extrabold text-rojo">
-                          {deseo.price}
-                        </span>
-                      ) : null}
-                    </div>
-
-                    {deseo.note ? (
-                      <p className="text-sm font-semibold text-gris">{deseo.note}</p>
-                    ) : null}
-
-                    {deseo.url ? (
-                      <a
-                        href={deseo.url}
-                        target="_blank"
-                        rel="noreferrer nofollow"
-                        className="block truncate text-xs font-bold text-azul underline underline-offset-2"
-                      >
-                        {deseo.siteName ?? deseo.url}
-                      </a>
-                    ) : null}
-
-                    <details className="pt-1">
-                      <summary className="inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-azul">
-                        <Pencil className="size-3" />
-                        Editar
-                      </summary>
-
-                      <form
-                        action={editarDeseoAccion}
-                        className="mt-3 space-y-3 rounded-2xl border-2 border-tinta bg-blanco p-3"
-                      >
-                        <input
-                          type="hidden"
-                          name="participantId"
-                          value={participante.id}
-                        />
-                        <input type="hidden" name="itemId" value={deseo.id} />
-
-                        <Campo etiqueta="Qué es" htmlFor={`titulo-${deseo.id}`}>
-                          <Entrada
-                            id={`titulo-${deseo.id}`}
-                            name="title"
-                            defaultValue={deseo.title}
-                            required
-                            maxLength={160}
-                          />
-                        </Campo>
-
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <Campo etiqueta="Precio" htmlFor={`precio-${deseo.id}`}>
-                            <Entrada
-                              id={`precio-${deseo.id}`}
-                              name="price"
-                              defaultValue={deseo.price ?? ""}
-                              maxLength={40}
-                            />
-                          </Campo>
-                          <Campo etiqueta="Ganas" htmlFor={`ganas-${deseo.id}`}>
-                            <select
-                              id={`ganas-${deseo.id}`}
-                              name="priority"
-                              defaultValue={String(deseo.priority)}
-                              className={claseInput}
-                            >
-                              <option value="1">Me encantaría</option>
-                              <option value="2">Me gusta</option>
-                              <option value="3">Tal vez</option>
-                            </select>
-                          </Campo>
-                        </div>
-
-                        <Campo etiqueta="Nota" htmlFor={`nota-${deseo.id}`}>
-                          <AreaTexto
-                            id={`nota-${deseo.id}`}
-                            name="note"
-                            defaultValue={deseo.note ?? ""}
-                            maxLength={500}
-                          />
-                        </Campo>
-
-                        <Campo
-                          etiqueta="Cambiar la foto"
-                          htmlFor={`foto-${deseo.id}`}
-                          pista="Pega la dirección de otra imagen. Si lo dejas vacío, se queda la de ahora."
-                        >
-                          <Entrada
-                            id={`foto-${deseo.id}`}
-                            name="imageUrl"
-                            type="url"
-                            placeholder="https://.../foto.jpg"
-                          />
-                        </Campo>
-
-                        <BotonEnvio
-                          variante="secundario"
-                          tamano="sm"
-                          cargando="Guardando..."
-                        >
-                          Guardar cambios
-                        </BotonEnvio>
-                      </form>
-                    </details>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <ListaDeseos
+            participantId={participante.id}
+            deseos={deseos.map((d) => ({
+              id: d.id,
+              title: d.title,
+              note: d.note,
+              price: d.price,
+              url: d.url,
+              siteName: d.siteName,
+              imageUrl: d.imageUrl,
+              priority: d.priority,
+            }))}
+          />
         )}
 
         <TarjetaCuerpo className="border-t-[3px] border-tinta bg-crema">

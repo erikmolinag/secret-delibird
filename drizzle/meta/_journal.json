@@ -29,6 +29,13 @@
       "when": 1795038206987,
       "tag": "0003_perfil_primera_vez",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795042856979,
+      "tag": "0004_fotos_de_regalos",
+      "breakpoints": true
     }
   ]
 }

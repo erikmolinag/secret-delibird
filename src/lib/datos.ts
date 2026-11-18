@@ -188,7 +188,8 @@ export async function listaDeDeseos(participantId: string) {
     .select()
     .from(schema.wishlistItems)
     .where(eq(schema.wishlistItems.participantId, participantId))
-    .orderBy(asc(schema.wishlistItems.priority), desc(schema.wishlistItems.createdAt));
+    // El orden lo manda quien arma la lista; la fecha solo desempata.
+    .orderBy(asc(schema.wishlistItems.position), asc(schema.wishlistItems.createdAt));
 }
 
 /** Pokémon ya repartidos en el evento, para no repetir avatares. */

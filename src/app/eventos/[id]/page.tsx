@@ -20,6 +20,7 @@ import {
   actualizarEventoAccion,
   agregarInvitadosAccion,
   alternarJuegaAccion,
+  eliminarEventoAccion,
   eliminarInvitadoAccion,
   enviarInvitacionesAccion,
 } from "@/actions/eventos";
@@ -572,6 +573,26 @@ export default async function PanelEvento({
               Guardar cambios
             </BotonEnvio>
           </form>
+
+          <details className="mt-6 rounded-2xl border-[3px] border-tinta bg-rojo-claro px-4 py-3">
+            <summary className="cursor-pointer font-display text-sm font-extrabold text-rojo-oscuro">
+              Borrar este evento
+            </summary>
+
+            <div className="space-y-3 pt-3">
+              <p className="text-sm font-semibold text-rojo-oscuro">
+                Se borra todo: invitados, listas de deseos, reglas y el sorteo.
+                No se puede deshacer y nadie va a poder entrar con sus enlaces.
+              </p>
+              <form action={eliminarEventoAccion}>
+                <input type="hidden" name="eventId" value={evento.id} />
+                <BotonEnvio variante="peligro" tamano="sm" cargando="Borrando...">
+                  <Trash2 className="size-4" />
+                  Sí, borrar &quot;{evento.name}&quot;
+                </BotonEnvio>
+              </form>
+            </div>
+          </details>
         </div>
       </details>
     </div>

@@ -38,11 +38,11 @@ async function NavUsuario() {
   // Salir vive dentro del perfil: en el teléfono no cabe un tercer botón.
   return (
     <>
-      <BotonLink href="/eventos" variante="fantasma" tamano="sm">
-        Eventos
-      </BotonLink>
       <BotonLink href="/perfil" variante="fantasma" tamano="sm">
         Perfil
+      </BotonLink>
+      <BotonLink href="/eventos" variante="fantasma" tamano="sm">
+        Eventos
       </BotonLink>
     </>
   );

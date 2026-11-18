@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 
 import { db, schema } from "@/db";
@@ -58,6 +58,40 @@ async function avisarAQuienTeRegala(participantId: string) {
     .where(eq(schema.assignments.id, asignacion.id));
 }
 
+
+const TOPE_FOTO = 900_000; // ~650 KB de imagen ya codificada
+
+/**
+ * Guarda la miniatura que armo el navegador y devuelve la URL con la que se
+ * pinta. Si la foto no cuadra, devuelve null y el regalo se queda como estaba.
+ */
+async function guardarFoto(itemId: string, dataUrl: string) {
+  const partes = /^data:(image\/(?:webp|jpeg|png));base64,([A-Za-z0-9+/=]+)$/.exec(
+    dataUrl,
+  );
+  if (!partes) return null;
+
+  const [, mime, datos] = partes;
+  if (datos.length > TOPE_FOTO) return null;
+
+  await db
+    .insert(schema.wishlistImages)
+    .values({ itemId, mime, datos })
+    .onConflictDoUpdate({
+      target: schema.wishlistImages.itemId,
+      set: { mime, datos, createdAt: new Date() },
+    });
+
+  // La version en la URL hace que el navegador no se quede con la foto vieja.
+  return `/api/imagen/${itemId}?v=${Date.now()}`;
+}
+
+async function borrarFoto(itemId: string) {
+  await db
+    .delete(schema.wishlistImages)
+    .where(eq(schema.wishlistImages.itemId, itemId));
+}
+
 export async function agregarDeseoAccion(datos: FormData) {
   const usuario = await requerirUsuario();
   const participantId = texto(datos, "participantId");
@@ -72,19 +106,42 @@ export async function agregarDeseoAccion(datos: FormData) {
 
   const imagenManual = texto(datos, "imageUrl");
   const imagenScrape = texto(datos, "scrapedImageUrl");
+  const fotoSubida = texto(datos, "fotoSubida");
   const prioridad = Number.parseInt(texto(datos, "priority") ?? "2", 10);
 
-  await db.insert(schema.wishlistItems).values({
-    participantId,
-    url,
-    title: titulo.slice(0, 160),
-    note: texto(datos, "note")?.slice(0, 500) ?? null,
-    price: texto(datos, "price")?.slice(0, 40) ?? null,
-    siteName: texto(datos, "siteName"),
-    imageUrl: imagenManual ?? imagenScrape,
-    imageSource: imagenManual ? "manual" : imagenScrape ? "scraped" : "none",
-    priority: [1, 2, 3].includes(prioridad) ? prioridad : 2,
-  });
+  // Al final de la lista, para que lo nuevo no se cuele hasta arriba.
+  const [ultimo] = await db
+    .select({ posicion: schema.wishlistItems.position })
+    .from(schema.wishlistItems)
+    .where(eq(schema.wishlistItems.participantId, participantId))
+    .orderBy(desc(schema.wishlistItems.position))
+    .limit(1);
+
+  const [creado] = await db
+    .insert(schema.wishlistItems)
+    .values({
+      participantId,
+      url,
+      title: titulo.slice(0, 160),
+      note: texto(datos, "note")?.slice(0, 500) ?? null,
+      price: texto(datos, "price")?.slice(0, 40) ?? null,
+      siteName: texto(datos, "siteName"),
+      imageUrl: imagenManual ?? imagenScrape,
+      imageSource: imagenManual ? "manual" : imagenScrape ? "scraped" : "none",
+      priority: [1, 2, 3].includes(prioridad) ? prioridad : 2,
+      position: (ultimo?.posicion ?? 0) + 1,
+    })
+    .returning({ id: schema.wishlistItems.id });
+
+  if (fotoSubida && creado) {
+    const url = await guardarFoto(creado.id, fotoSubida);
+    if (url) {
+      await db
+        .update(schema.wishlistItems)
+        .set({ imageUrl: url, imageSource: "manual" })
+        .where(eq(schema.wishlistItems.id, creado.id));
+    }
+  }
 
   await db
     .update(schema.participants)
@@ -130,6 +187,12 @@ export async function editarDeseoAccion(datos: FormData) {
 
   const prioridad = Number.parseInt(texto(datos, "priority") ?? "2", 10);
   const imagen = texto(datos, "imageUrl");
+  const fotoSubida = texto(datos, "fotoSubida");
+
+  // La foto subida gana sobre la dirección pegada a mano.
+  let foto: string | null = null;
+  if (fotoSubida) foto = await guardarFoto(itemId, fotoSubida);
+  else if (imagen) await borrarFoto(itemId);
 
   await db
     .update(schema.wishlistItems)
@@ -138,7 +201,11 @@ export async function editarDeseoAccion(datos: FormData) {
       note: texto(datos, "note")?.slice(0, 500) ?? null,
       price: texto(datos, "price")?.slice(0, 40) ?? null,
       priority: [1, 2, 3].includes(prioridad) ? prioridad : 2,
-      ...(imagen ? { imageUrl: imagen, imageSource: "manual" as const } : {}),
+      ...(foto
+        ? { imageUrl: foto, imageSource: "manual" as const }
+        : imagen
+          ? { imageUrl: imagen, imageSource: "manual" as const }
+          : {}),
       updatedAt: new Date(),
     })
     .where(
@@ -155,4 +222,36 @@ export async function editarDeseoAccion(datos: FormData) {
 
   await avisarAQuienTeRegala(participantId);
   refresh();
+}
+
+/** Guarda el orden nuevo despues de arrastrar. */
+export async function reordenarDeseosAccion(orden: {
+  participantId: string;
+  ids: string[];
+}) {
+  const usuario = await requerirUsuario();
+
+  const fila = await participanteDelUsuario(orden.participantId, usuario);
+  if (!fila) return { ok: false as const };
+
+  const mios = await db
+    .select({ id: schema.wishlistItems.id })
+    .from(schema.wishlistItems)
+    .where(eq(schema.wishlistItems.participantId, orden.participantId));
+
+  const permitidos = new Set(mios.map((m) => m.id));
+  const limpios = orden.ids.filter((id) => permitidos.has(id));
+  if (limpios.length !== permitidos.size) return { ok: false as const };
+
+  await db.transaction(async (tx) => {
+    for (const [posicion, id] of limpios.entries()) {
+      await tx
+        .update(schema.wishlistItems)
+        .set({ position: posicion + 1 })
+        .where(eq(schema.wishlistItems.id, id));
+    }
+  });
+
+  refresh();
+  return { ok: true as const };
 }

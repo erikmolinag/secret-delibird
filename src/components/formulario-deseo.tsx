@@ -4,6 +4,7 @@ import { ImageOff, Link2, Loader2, Plus } from "lucide-react";
 import { useState } from "react";
 
 import { agregarDeseoAccion, previsualizarLinkAccion } from "@/actions/wishlist";
+import { CampoFoto } from "@/components/campo-foto";
 import { Boton } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
@@ -148,9 +149,13 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
         <AreaTexto id="note" name="note" maxLength={500} />
       </Campo>
 
+      <Campo etiqueta="O sube una foto tuya">
+        <CampoFoto />
+      </Campo>
+
       <details className="rounded-2xl border-[3px] border-tinta px-4 py-3" open={sinImagen}>
         <summary className="cursor-pointer text-sm font-bold text-azul">
-          Poner la imagen a mano
+          Pegar la dirección de una imagen
         </summary>
         <div className="pt-3">
           <Campo

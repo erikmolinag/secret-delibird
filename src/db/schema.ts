@@ -176,6 +176,23 @@ export const wishlistItems = pgTable(
   (t) => [index("wishlist_participant_idx").on(t.participantId)],
 );
 
+/**
+ * La foto de un regalo, cuando se sube en vez de sacarla de un link. Vive en su
+ * propia tabla para que las consultas de la lista no arrastren los bytes.
+ * Guardamos solo la miniatura que arma el navegador; el original nunca se sube.
+ */
+export const wishlistImages = pgTable("wishlist_images", {
+  id: uuid(),
+  itemId: text("item_id")
+    .notNull()
+    .unique()
+    .references(() => wishlistItems.id, { onDelete: "cascade" }),
+  mime: text("mime").notNull(),
+  /** La imagen en base64, sin el prefijo "data:". */
+  datos: text("datos").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 /** "Yo le compro esto": invisible para el dueno de la lista. */
 export const reservations = pgTable(
   "reservations",
