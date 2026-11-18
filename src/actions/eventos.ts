@@ -212,3 +212,43 @@ export async function enviarInvitacionesAccion(datos: FormData) {
 
   refresh();
 }
+
+/** Saca o mete a alguien al sorteo sin borrarlo del evento. */
+export async function alternarJuegaAccion(datos: FormData) {
+  const usuario = await requerirUsuario();
+  const eventId = texto(datos, "eventId");
+  const participantId = texto(datos, "participantId");
+  if (!eventId || !participantId) return;
+
+  const evento = await eventoDelOrganizador(eventId, usuario.id);
+  if (!evento || evento.status === "drawn") return;
+
+  const [invitado] = await db
+    .select()
+    .from(schema.participants)
+    .where(
+      and(
+        eq(schema.participants.id, participantId),
+        eq(schema.participants.eventId, eventId),
+      ),
+    )
+    .limit(1);
+  if (!invitado) return;
+
+  const juega = !invitado.isPlaying;
+
+  await db
+    .update(schema.participants)
+    .set({ isPlaying: juega })
+    .where(eq(schema.participants.id, participantId));
+
+  // El organizador tiene su propio interruptor en los ajustes del evento.
+  if (invitado.isOrganizer) {
+    await db
+      .update(schema.events)
+      .set({ organizerPlays: juega })
+      .where(eq(schema.events.id, eventId));
+  }
+
+  refresh();
+}

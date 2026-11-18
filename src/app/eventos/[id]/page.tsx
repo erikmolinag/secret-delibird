@@ -9,6 +9,8 @@ import {
   Settings2,
   Shuffle,
   Trash2,
+  UserCheck,
+  UserMinus,
   UserPlus,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -17,6 +19,7 @@ import { notFound } from "next/navigation";
 import {
   actualizarEventoAccion,
   agregarInvitadosAccion,
+  alternarJuegaAccion,
   eliminarInvitadoAccion,
   enviarInvitacionesAccion,
 } from "@/actions/eventos";
@@ -39,6 +42,7 @@ import {
 import { requerirUsuario } from "@/lib/auth";
 import {
   asignacionesDelEvento,
+  cuantosYaCompraron,
   eventoDelOrganizador,
   invitadosDelEvento,
   reglasDelEvento,
@@ -96,6 +100,7 @@ export default async function PanelEvento({
 
   const yaSorteado = evento.status === "drawn";
   const parejas = yaSorteado && revelar ? await asignacionesDelEvento(id) : [];
+  const yaCompraron = yaSorteado ? await cuantosYaCompraron(id) : 0;
 
   return (
     <div className="space-y-8">
@@ -142,7 +147,9 @@ export default async function PanelEvento({
           {[
             { etiqueta: "Invitados", valor: invitados.length },
             { etiqueta: "Con lista armada", valor: conLista },
-            { etiqueta: "Sin invitación enviada", valor: porInvitar },
+            yaSorteado
+              ? { etiqueta: "Ya compraron su regalo", valor: yaCompraron }
+              : { etiqueta: "Sin invitación enviada", valor: porInvitar },
           ].map((dato) => (
             <div
               key={dato.etiqueta}
@@ -210,6 +217,31 @@ export default async function PanelEvento({
                 ) : (
                   <Insignia tono="alerta">Sin invitar</Insignia>
                 )}
+              </div>
+
+              <div className="flex items-center gap-1">
+                {evento.status === "draft" ? (
+                  <form action={alternarJuegaAccion}>
+                    <input type="hidden" name="eventId" value={evento.id} />
+                    <input type="hidden" name="participantId" value={invitado.id} />
+                    <Boton
+                      type="submit"
+                      variante="fantasma"
+                      tamano="sm"
+                      title={
+                        invitado.isPlaying
+                          ? `Sacar a ${invitado.name} del sorteo`
+                          : `Meter a ${invitado.name} al sorteo`
+                      }
+                    >
+                      {invitado.isPlaying ? (
+                        <UserMinus className="size-3.5" />
+                      ) : (
+                        <UserCheck className="size-3.5" />
+                      )}
+                    </Boton>
+                  </form>
+                ) : null}
               </div>
 
               {!invitado.isOrganizer ? (

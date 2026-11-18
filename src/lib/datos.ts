@@ -237,3 +237,25 @@ export function parsearInvitados(texto: string) {
 
   return { invitados, inválidos };
 }
+
+/** Los regalos que esta persona ya marcó como comprados. */
+export async function comprasDe(participantId: string) {
+  const filas = await db
+    .select({ itemId: schema.reservations.itemId })
+    .from(schema.reservations)
+    .where(eq(schema.reservations.byParticipantId, participantId));
+  return new Set(filas.map((f) => f.itemId));
+}
+
+/** Cuántos invitados ya compraron algo. Es un número, no delata parejas. */
+export async function cuantosYaCompraron(eventId: string) {
+  const filas = await db
+    .selectDistinct({ quien: schema.reservations.byParticipantId })
+    .from(schema.reservations)
+    .innerJoin(
+      schema.participants,
+      eq(schema.participants.id, schema.reservations.byParticipantId),
+    )
+    .where(eq(schema.participants.eventId, eventId));
+  return filas.length;
+}

@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -111,10 +111,23 @@ export async function sortearAccion(datos: FormData) {
     redirect(`/eventos/${evento.id}/reglas?error=${encodeURIComponent(motivo)}`);
   }
 
+  const integrantes = await db
+    .select({ id: schema.participants.id })
+    .from(schema.participants)
+    .where(eq(schema.participants.eventId, evento.id));
+
   await db.transaction(async (tx) => {
     await tx
       .delete(schema.assignments)
       .where(eq(schema.assignments.eventId, evento.id));
+
+    // Las marcas de "ya lo compré" eran del reparto anterior: ya no valen.
+    await tx.delete(schema.reservations).where(
+      inArray(
+        schema.reservations.byParticipantId,
+        integrantes.map((p) => p.id),
+      ),
+    );
 
     await tx.insert(schema.assignments).values(
       resultado.parejas.map((pareja) => ({
@@ -170,10 +183,21 @@ export async function deshacerSorteoAccion(datos: FormData) {
   const contexto = await eventoMio(eventId);
   if (!contexto || contexto.evento.status !== "drawn") return;
 
+  const integrantes = await db
+    .select({ id: schema.participants.id })
+    .from(schema.participants)
+    .where(eq(schema.participants.eventId, contexto.evento.id));
+
   await db.transaction(async (tx) => {
     await tx
       .delete(schema.assignments)
       .where(eq(schema.assignments.eventId, contexto.evento.id));
+    await tx.delete(schema.reservations).where(
+      inArray(
+        schema.reservations.byParticipantId,
+        integrantes.map((p) => p.id),
+      ),
+    );
     await tx
       .update(schema.events)
       .set({ status: "draft", drawnAt: null })

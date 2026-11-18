@@ -1,8 +1,19 @@
-import { CalendarDays, Coins, Gift, ImageOff, MapPin, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  Check,
+  Coins,
+  Gift,
+  ImageOff,
+  MapPin,
+  Pencil,
+  ShoppingBag,
+  Trash2,
+} from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { eliminarDeseoAccion } from "@/actions/wishlist";
+import { alternarCompradoAccion } from "@/actions/regalos";
+import { editarDeseoAccion, eliminarDeseoAccion } from "@/actions/wishlist";
 import { Acebo } from "@/components/adornos";
 import { Avatar } from "@/components/avatar";
 import { SelectorAvatar } from "@/components/selector-avatar";
@@ -15,10 +26,13 @@ import {
   TarjetaEncabezado,
   TituloSeccion,
 } from "@/components/ui/tarjeta";
+import { BotonEnvio } from "@/components/ui/boton-envio";
+import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
 import { requerirUsuario } from "@/lib/auth";
 import { nombreAvatar } from "@/lib/avatares";
 import {
   aQuienLeRegala,
+  comprasDe,
   listaDeDeseos,
   participanteDelUsuario,
 } from "@/lib/datos";
@@ -53,6 +67,7 @@ export default async function MiEvento({
   const listaDeTuPersona = asignado
     ? await listaDeDeseos(asignado.receptor.id)
     : [];
+  const yaCompre = asignado ? await comprasDe(participante.id) : new Set<string>();
   const presupuesto = formatearPresupuesto(
     evento.budgetAmount,
     evento.budgetCurrency,
@@ -135,10 +150,13 @@ export default async function MiEvento({
               <ul className="grid gap-3 sm:grid-cols-2">
                 {listaDeTuPersona.map((deseo) => {
                   const ganas = GANAS[deseo.priority] ?? GANAS[2];
+                  const comprado = yaCompre.has(deseo.id);
                   return (
                     <li
                       key={deseo.id}
-                      className="flex gap-3 rounded-2xl border-[3px] border-tinta bg-crema p-3"
+                      className={`flex gap-3 rounded-2xl border-[3px] border-tinta p-3 ${
+                        comprado ? "bg-verde-claro" : "bg-crema"
+                      }`}
                     >
                       {deseo.imageUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -182,6 +200,32 @@ export default async function MiEvento({
                             {deseo.siteName ?? deseo.url}
                           </a>
                         ) : null}
+
+                        <form action={alternarCompradoAccion} className="pt-1">
+                          <input
+                            type="hidden"
+                            name="participantId"
+                            value={participante.id}
+                          />
+                          <input type="hidden" name="itemId" value={deseo.id} />
+                          <BotonEnvio
+                            variante={comprado ? "secundario" : "fantasma"}
+                            tamano="sm"
+                            cargando="..."
+                          >
+                            {comprado ? (
+                              <>
+                                <Check className="size-3.5" />
+                                Ya lo compré
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag className="size-3.5" />
+                                Marcar comprado
+                              </>
+                            )}
+                          </BotonEnvio>
+                        </form>
                       </div>
                     </li>
                   );
@@ -199,11 +243,14 @@ export default async function MiEvento({
             <div className="min-w-0 flex-1">
               <TituloSeccion>A quién le regalas</TituloSeccion>
               <p className="text-sm font-semibold text-gris">
-                Delibird todavía no reparte los nombres. Mientras, arma tu lista
-                para que no te regalen calcetines.
+                {!participante.isPlaying
+                  ? "Este año no entras al sorteo: no te toca regalarle a nadie y nadie te saca a ti. Si es un error, dile a quien organiza."
+                  : "Delibird todavía no reparte los nombres. Mientras, arma tu lista para que no te regalen calcetines."}
               </p>
             </div>
-            <Insignia tono="espera">Sin sortear</Insignia>
+            <Insignia tono={participante.isPlaying ? "espera" : "alerta"}>
+              {participante.isPlaying ? "Sin sortear" : "Fuera del sorteo"}
+            </Insignia>
           </TarjetaCuerpo>
         </Tarjeta>
       )}
@@ -291,6 +338,88 @@ export default async function MiEvento({
                         {deseo.siteName ?? deseo.url}
                       </a>
                     ) : null}
+
+                    <details className="pt-1">
+                      <summary className="inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-azul">
+                        <Pencil className="size-3" />
+                        Editar
+                      </summary>
+
+                      <form
+                        action={editarDeseoAccion}
+                        className="mt-3 space-y-3 rounded-2xl border-2 border-tinta bg-blanco p-3"
+                      >
+                        <input
+                          type="hidden"
+                          name="participantId"
+                          value={participante.id}
+                        />
+                        <input type="hidden" name="itemId" value={deseo.id} />
+
+                        <Campo etiqueta="Qué es" htmlFor={`titulo-${deseo.id}`}>
+                          <Entrada
+                            id={`titulo-${deseo.id}`}
+                            name="title"
+                            defaultValue={deseo.title}
+                            required
+                            maxLength={160}
+                          />
+                        </Campo>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Campo etiqueta="Precio" htmlFor={`precio-${deseo.id}`}>
+                            <Entrada
+                              id={`precio-${deseo.id}`}
+                              name="price"
+                              defaultValue={deseo.price ?? ""}
+                              maxLength={40}
+                            />
+                          </Campo>
+                          <Campo etiqueta="Ganas" htmlFor={`ganas-${deseo.id}`}>
+                            <select
+                              id={`ganas-${deseo.id}`}
+                              name="priority"
+                              defaultValue={String(deseo.priority)}
+                              className={claseInput}
+                            >
+                              <option value="1">Me encantaría</option>
+                              <option value="2">Me gusta</option>
+                              <option value="3">Tal vez</option>
+                            </select>
+                          </Campo>
+                        </div>
+
+                        <Campo etiqueta="Nota" htmlFor={`nota-${deseo.id}`}>
+                          <AreaTexto
+                            id={`nota-${deseo.id}`}
+                            name="note"
+                            defaultValue={deseo.note ?? ""}
+                            maxLength={500}
+                          />
+                        </Campo>
+
+                        <Campo
+                          etiqueta="Cambiar la foto"
+                          htmlFor={`foto-${deseo.id}`}
+                          pista="Pega la dirección de otra imagen. Si lo dejas vacío, se queda la de ahora."
+                        >
+                          <Entrada
+                            id={`foto-${deseo.id}`}
+                            name="imageUrl"
+                            type="url"
+                            placeholder="https://.../foto.jpg"
+                          />
+                        </Campo>
+
+                        <BotonEnvio
+                          variante="secundario"
+                          tamano="sm"
+                          cargando="Guardando..."
+                        >
+                          Guardar cambios
+                        </BotonEnvio>
+                      </form>
+                    </details>
                   </div>
                 </li>
               );

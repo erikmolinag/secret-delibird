@@ -117,19 +117,30 @@ export async function eliminarDeseoAccion(datos: FormData) {
   refresh();
 }
 
-export async function cambiarPrioridadAccion(datos: FormData) {
+/** Cambiar lo que ya pediste: nombre, nota, precio, ganas o la foto. */
+export async function editarDeseoAccion(datos: FormData) {
   const usuario = await requerirUsuario();
   const participantId = texto(datos, "participantId");
   const itemId = texto(datos, "itemId");
-  const prioridad = Number.parseInt(texto(datos, "priority") ?? "", 10);
-  if (!participantId || !itemId || ![1, 2, 3].includes(prioridad)) return;
+  const titulo = texto(datos, "title");
+  if (!participantId || !itemId || !titulo) return;
 
   const fila = await participanteDelUsuario(participantId, usuario);
   if (!fila) return;
 
+  const prioridad = Number.parseInt(texto(datos, "priority") ?? "2", 10);
+  const imagen = texto(datos, "imageUrl");
+
   await db
     .update(schema.wishlistItems)
-    .set({ priority: prioridad, updatedAt: new Date() })
+    .set({
+      title: titulo.slice(0, 160),
+      note: texto(datos, "note")?.slice(0, 500) ?? null,
+      price: texto(datos, "price")?.slice(0, 40) ?? null,
+      priority: [1, 2, 3].includes(prioridad) ? prioridad : 2,
+      ...(imagen ? { imageUrl: imagen, imageSource: "manual" as const } : {}),
+      updatedAt: new Date(),
+    })
     .where(
       and(
         eq(schema.wishlistItems.id, itemId),
@@ -137,5 +148,11 @@ export async function cambiarPrioridadAccion(datos: FormData) {
       ),
     );
 
+  await db
+    .update(schema.participants)
+    .set({ wishlistUpdatedAt: new Date() })
+    .where(eq(schema.participants.id, participantId));
+
+  await avisarAQuienTeRegala(participantId);
   refresh();
 }

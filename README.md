@@ -10,7 +10,11 @@ con reglas de verdad.
 | --- | --- | --- |
 | 1 | Acceso por magic link, eventos, invitados, correos de invitación, listas de deseos con preview de links, avatar a elegir (entrenador o cualquier Pokémon) | ✅ listo |
 | 2 | Reglas del sorteo (exclusiones, listas blancas, asignaciones fijas), sorteo con diagnóstico, correos de "ya salió" y "movieron su lista", botón de revelar con bitácora | ✅ listo |
-| 3 | Apartar regalos sin que el dueño lo vea, recordatorios, pulido | ⏳ pendiente |
+| 3 | Marcar regalos comprados (invisible para el dueño), editar lo que ya pediste, sacar y meter gente al sorteo, páginas de 404, error y carga | ✅ listo |
+
+Los recordatorios por correo antes del evento quedaron fuera a propósito: de los
+cuatro avisos posibles elegiste tres, y ese no estaba. Si lo quieres después,
+necesita un cron (Vercel Cron, gratis) y una columna para no mandarlo dos veces.
 
 ## El sorteo
 
@@ -129,6 +133,10 @@ Detalles que no se ven pero importan:
   de dominios arbitrarios y así no se gasta la cuota de optimización de Vercel.
 - Los avatares Pokémon se reparten sin repetir dentro del mismo evento, con un
   PRNG sembrado con el id del evento (mismo evento, mismo reparto).
+- "Ya lo compré" vive en `reservations` y solo lo lee quien regala: la consulta
+  de tu propia lista ni siquiera toca esa tabla, así que no hay forma de que se
+  te escape por pantalla. Al volver a sortear se borran, porque eran del reparto
+  anterior.
 
 ## Nota
 
