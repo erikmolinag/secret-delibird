@@ -26,6 +26,66 @@ export const metadata: Metadata = { title: "Reglas del sorteo" };
 /** Depende de la sesión: se renderiza por petición. */
 export const instant = false;
 
+
+type Jugador = { id: string; name: string };
+
+function Selector({
+  name,
+  etiqueta,
+  jugadores,
+}: {
+  name: string;
+  etiqueta: string;
+  jugadores: Jugador[];
+}) {
+  return (
+    <select
+      name={name}
+      required
+      defaultValue=""
+      className={claseInput}
+      aria-label={etiqueta}
+    >
+      <option value="" disabled>
+        {etiqueta}
+      </option>
+      {jugadores.map((jugador) => (
+        <option key={jugador.id} value={jugador.id}>
+          {jugador.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function FilaRegla({
+  eventId,
+  ruleId,
+  editable,
+  children,
+}: {
+  eventId: string;
+  ruleId: string;
+  editable: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <li className="flex items-center justify-between gap-3 rounded-2xl border-2 border-tinta bg-crema px-3 py-2">
+      <span className="text-sm font-semibold">{children}</span>
+      {editable ? (
+        <form action={eliminarReglaAccion}>
+          <input type="hidden" name="eventId" value={eventId} />
+          <input type="hidden" name="ruleId" value={ruleId} />
+          <Boton type="submit" variante="peligro" tamano="sm" className="px-2 py-1">
+            <Trash2 className="size-3.5" />
+            <span className="sr-only">Quitar regla</span>
+          </Boton>
+        </form>
+      ) : null}
+    </li>
+  );
+}
+
 export default async function Reglas({
   params,
   searchParams,
@@ -71,41 +131,6 @@ export default async function Reglas({
     const actuales = porPersona.get(regla.fromParticipantId) ?? [];
     porPersona.set(regla.fromParticipantId, [...actuales, regla]);
   }
-
-  const Selector = ({ name, etiqueta }: { name: string; etiqueta: string }) => (
-    <select name={name} required defaultValue="" className={claseInput} aria-label={etiqueta}>
-      <option value="" disabled>
-        {etiqueta}
-      </option>
-      {jugadores.map((jugador) => (
-        <option key={jugador.id} value={jugador.id}>
-          {jugador.name}
-        </option>
-      ))}
-    </select>
-  );
-
-  const FilaRegla = ({
-    ruleId,
-    children,
-  }: {
-    ruleId: string;
-    children: React.ReactNode;
-  }) => (
-    <li className="flex items-center justify-between gap-3 rounded-2xl border-2 border-tinta bg-crema px-3 py-2">
-      <span className="text-sm font-semibold">{children}</span>
-      {!yaSorteado ? (
-        <form action={eliminarReglaAccion}>
-          <input type="hidden" name="eventId" value={evento.id} />
-          <input type="hidden" name="ruleId" value={ruleId} />
-          <Boton type="submit" variante="peligro" tamano="sm" className="px-2 py-1">
-            <Trash2 className="size-3.5" />
-            <span className="sr-only">Quitar regla</span>
-          </Boton>
-        </form>
-      ) : null}
-    </li>
-  );
 
   return (
     <div className="space-y-6">
@@ -196,7 +221,7 @@ export default async function Reglas({
           {exclusiones.length ? (
             <ul className="space-y-2">
               {exclusiones.map((regla) => (
-                <FilaRegla key={regla.id} ruleId={regla.id}>
+                <FilaRegla key={regla.id} eventId={evento.id} ruleId={regla.id} editable={!yaSorteado}>
                   {nombre(regla.fromParticipantId)}{" "}
                   {regla.bidirectional ? "y" : "no le regala a"}{" "}
                   {nombre(regla.toParticipantId)}
@@ -211,8 +236,8 @@ export default async function Reglas({
               <input type="hidden" name="eventId" value={evento.id} />
               <input type="hidden" name="tipo" value="exclude" />
               <div className="grid gap-3 sm:grid-cols-2">
-                <Selector name="from" etiqueta="Quién" />
-                <Selector name="to" etiqueta="No le regala a" />
+                <Selector name="from" etiqueta="Quién" jugadores={jugadores} />
+                <Selector name="to" etiqueta="No le regala a" jugadores={jugadores} />
               </div>
               <label className="flex items-center gap-2 text-sm font-semibold">
                 <input
@@ -291,8 +316,8 @@ export default async function Reglas({
               <input type="hidden" name="eventId" value={evento.id} />
               <input type="hidden" name="tipo" value="whitelist" />
               <div className="grid gap-3 sm:grid-cols-2">
-                <Selector name="from" etiqueta="Quién" />
-                <Selector name="to" etiqueta="Solo le puede tocar" />
+                <Selector name="from" etiqueta="Quién" jugadores={jugadores} />
+                <Selector name="to" etiqueta="Solo le puede tocar" jugadores={jugadores} />
               </div>
               <BotonEnvio variante="secundario" tamano="sm" cargando="Agregando...">
                 Agregar a su lista
@@ -319,7 +344,7 @@ export default async function Reglas({
           {pines.length ? (
             <ul className="space-y-2">
               {pines.map((regla) => (
-                <FilaRegla key={regla.id} ruleId={regla.id}>
+                <FilaRegla key={regla.id} eventId={evento.id} ruleId={regla.id} editable={!yaSorteado}>
                   {nombre(regla.fromParticipantId)} le regala a{" "}
                   {nombre(regla.toParticipantId)}
                 </FilaRegla>
@@ -332,8 +357,8 @@ export default async function Reglas({
               <input type="hidden" name="eventId" value={evento.id} />
               <input type="hidden" name="tipo" value="pin" />
               <div className="grid gap-3 sm:grid-cols-2">
-                <Selector name="from" etiqueta="Quién regala" />
-                <Selector name="to" etiqueta="Le toca" />
+                <Selector name="from" etiqueta="Quién regala" jugadores={jugadores} />
+                <Selector name="to" etiqueta="Le toca" jugadores={jugadores} />
               </div>
               <BotonEnvio variante="secundario" tamano="sm" cargando="Fijando...">
                 Fijar esta pareja
