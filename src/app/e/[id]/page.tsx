@@ -6,6 +6,7 @@ import {
   ImageOff,
   MapPin,
   ShoppingBag,
+  Users,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -30,6 +31,7 @@ import { nombrePokemon } from "@/lib/pokemon";
 import {
   aQuienLeRegala,
   comprasDe,
+  invitadosDelEvento,
   listaDeDeseos,
   participanteDelUsuario,
 } from "@/lib/datos";
@@ -63,6 +65,7 @@ export default async function MiEvento({
 
   const { participante, evento } = fila;
   const deseos = await listaDeDeseos(participante.id);
+  const invitados = await invitadosDelEvento(evento.id);
 
   const asignado = evento.status === "drawn" ? await aQuienLeRegala(participante.id) : null;
   const listaDeTuPersona = asignado
@@ -142,6 +145,57 @@ export default async function MiEvento({
             {evento.message}
           </p>
         ) : null}
+
+        {/*
+          Quién más está en el intercambio. Es para chismosear los sprites, así
+          que van nombres y caras, sin correos y sin quién le regala a quién.
+        */}
+        <details className="group mt-4">
+          <summary className="inline-flex cursor-pointer items-center gap-2 rounded-full border-[3px] border-tinta bg-blanco px-4 py-2 font-display text-sm font-extrabold shadow-dura-sm transition hover:bg-crema-2">
+            <Users className="size-4 text-azul" />
+            Ver invitados
+            <span className="text-gris">({invitados.length})</span>
+          </summary>
+
+          <ul className="mt-3 divide-y-[3px] divide-tinta/15 overflow-hidden rounded-2xl border-[3px] border-tinta bg-blanco">
+            {invitados.map((invitado) => (
+              <li
+                key={invitado.id}
+                className="flex flex-wrap items-center gap-3 px-4 py-3"
+              >
+                <Avatar persona={invitado} tamano="sm" />
+
+                <div className="min-w-0 flex-1 basis-32">
+                  <p className="truncate font-bold">
+                    {nombreVisible(invitado)}
+                    {invitado.id === participante.id ? (
+                      <span className="ml-2 text-xs font-bold text-azul">tú</span>
+                    ) : null}
+                    {invitado.isOrganizer ? (
+                      <span className="ml-2 text-xs font-bold text-rojo">
+                        organiza
+                      </span>
+                    ) : null}
+                  </p>
+                  <p className="truncate text-xs text-gris">
+                    {invitado.avatarNombre ?? nombrePokemon(invitado.pokemonId)}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {!invitado.isPlaying ? (
+                    <Insignia tono="alerta">Fuera del sorteo</Insignia>
+                  ) : null}
+                  {invitado.wishlistUpdatedAt ? (
+                    <Insignia tono="listo">Lista armada</Insignia>
+                  ) : (
+                    <Insignia tono="espera">Sin lista</Insignia>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </details>
       </header>
 
       <Tarjeta>
