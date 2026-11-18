@@ -73,7 +73,7 @@ export default function Inicio() {
         <div className="relative mx-auto w-full max-w-sm">
           <Acebo className="absolute -left-2 -top-4 z-10 size-16 -rotate-12" />
           <Estrella className="absolute -right-1 top-6 z-10 size-10 rotate-12" />
-          <Baston className="absolute -bottom-3 left-6 z-10 size-14 -rotate-12" />
+          <Baston className="absolute -bottom-6 -left-5 z-10 size-16 -rotate-[18deg]" />
 
           <div className="rounded-[2rem] border-[3px] border-tinta bg-blanco p-5 shadow-dura">
             <div className="grid place-items-center rounded-3xl border-[3px] border-tinta bg-crema-2 p-4">
