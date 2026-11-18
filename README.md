@@ -208,6 +208,12 @@ Detalles que no se ven pero importan:
 - Las páginas por usuario llevan `export const instant = false` y los server
   actions terminan en `refresh()`: con Cache Components, `revalidatePath` no
   basta para que la vista se actualice sola.
+- **No metas un `loading.tsx` global.** Con Cache Components el contenido
+  dinámico llega en trozos que React inserta con `$RS`; si hay un `loading` de
+  por medio, en páginas con varios trozos el reemplazo truena
+  (`Cannot read properties of null (reading parentNode)`) y la página se queda
+  colgada en "Un momento..." para siempre. El servidor responde bien: el que
+  falla es el navegador. Pasó con el panel de admin.
 - `src/lib/og.ts` resuelve el DNS del link antes de abrirlo y rechaza IPs
   privadas: cualquier invitado puede pegar una URL y el servidor la visita (SSRF).
 - Las imágenes de las listas se muestran con `<img>` y no con `next/image`: son
