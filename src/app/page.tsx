@@ -73,7 +73,7 @@ export default function Inicio() {
         <div className="relative mx-auto w-full max-w-sm">
           <Acebo className="absolute -left-2 -top-4 z-10 size-16 -rotate-12" />
           <Estrella className="absolute -right-1 top-6 z-10 size-10 rotate-12" />
-          <Baston className="absolute -bottom-6 -left-5 z-10 size-16 -rotate-[18deg]" />
+          <Baston className="absolute -bottom-7 -left-7 z-10 size-16 -rotate-[18deg]" />
 
           <div className="rounded-[2rem] border-[3px] border-tinta bg-blanco p-5 shadow-dura">
             <div className="grid place-items-center rounded-3xl border-[3px] border-tinta bg-crema-2 p-4">
@@ -84,7 +84,8 @@ export default function Inicio() {
                 className="w-full max-w-64"
               />
             </div>
-            <p className="mt-3 text-center font-display text-lg font-extrabold">
+            {/* px-8: deja libres las esquinas, donde cuelgan los adornos */}
+            <p className="mt-3 px-8 text-center font-display text-lg font-extrabold">
               Delibird reparte lo que le encargues
             </p>
           </div>
