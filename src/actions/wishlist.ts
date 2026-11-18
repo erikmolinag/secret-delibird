@@ -5,7 +5,9 @@ import { refresh } from "next/cache";
 
 import { db, schema } from "@/db";
 import { requerirUsuario } from "@/lib/auth";
-import { participanteDelUsuario } from "@/lib/datos";
+import { participanteDelUsuario, quienLeRegalaA } from "@/lib/datos";
+import { crearMagicLink } from "@/lib/magic-link";
+import { enviarCorreo, plantillaListaActualizada } from "@/lib/mail";
 import { obtenerPreview, type Preview } from "@/lib/og";
 
 function texto(datos: FormData, campo: string) {
@@ -17,6 +19,43 @@ function texto(datos: FormData, campo: string) {
 export async function previsualizarLinkAccion(url: string): Promise<Preview | null> {
   await requerirUsuario();
   return obtenerPreview(url);
+}
+
+
+const ESPERA_AVISO_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Le avisa por correo a quien te regala que moviste tu lista. Como maximo un
+ * aviso cada seis horas, para no llenarle el buzon a nadie. Si el evento no se
+ * ha sorteado no hay a quien avisarle.
+ */
+async function avisarAQuienTeRegala(participantId: string) {
+  const fila = await quienLeRegalaA(participantId);
+  if (!fila) return;
+
+  const { asignacion, quienDa } = fila;
+  const reciente =
+    asignacion.wishlistAlertAt &&
+    Date.now() - asignacion.wishlistAlertAt.getTime() < ESPERA_AVISO_MS;
+  if (reciente) return;
+
+  const [evento] = await db
+    .select()
+    .from(schema.events)
+    .where(eq(schema.events.id, asignacion.eventId))
+    .limit(1);
+  if (!evento) return;
+
+  const url = await crearMagicLink(quienDa.email, `/e/${quienDa.id}`);
+  await enviarCorreo({
+    to: quienDa.email,
+    ...plantillaListaActualizada({ evento: evento.name, url }),
+  });
+
+  await db
+    .update(schema.assignments)
+    .set({ wishlistAlertAt: new Date() })
+    .where(eq(schema.assignments.id, asignacion.id));
 }
 
 export async function agregarDeseoAccion(datos: FormData) {
@@ -52,6 +91,7 @@ export async function agregarDeseoAccion(datos: FormData) {
     .set({ wishlistUpdatedAt: new Date() })
     .where(eq(schema.participants.id, participantId));
 
+  await avisarAQuienTeRegala(participantId);
   refresh();
 }
 
@@ -73,6 +113,7 @@ export async function eliminarDeseoAccion(datos: FormData) {
       ),
     );
 
+  await avisarAQuienTeRegala(participantId);
   refresh();
 }
 

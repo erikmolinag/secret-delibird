@@ -141,6 +141,8 @@ export const assignments = pgTable(
       .notNull()
       .references(() => participants.id, { onDelete: "cascade" }),
     notifiedAt: timestamp("notified_at", { withTimezone: true }),
+    /** Última vez que le avisamos a quien da que su persona movió la lista. */
+    wishlistAlertAt: timestamp("wishlist_alert_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [

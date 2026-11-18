@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { eliminarDeseoAccion } from "@/actions/wishlist";
 import { Acebo } from "@/components/adornos";
+import { Avatar } from "@/components/avatar";
 import { SelectorAvatar } from "@/components/selector-avatar";
 import { FormularioDeseo } from "@/components/formulario-deseo";
 import { Boton } from "@/components/ui/boton";
@@ -15,7 +16,12 @@ import {
   TituloSeccion,
 } from "@/components/ui/tarjeta";
 import { requerirUsuario } from "@/lib/auth";
-import { listaDeDeseos, participanteDelUsuario } from "@/lib/datos";
+import { nombreAvatar } from "@/lib/avatares";
+import {
+  aQuienLeRegala,
+  listaDeDeseos,
+  participanteDelUsuario,
+} from "@/lib/datos";
 import { formatearFecha, formatearPresupuesto } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Mi lista de deseos" };
@@ -42,6 +48,11 @@ export default async function MiEvento({
 
   const { participante, evento } = fila;
   const deseos = await listaDeDeseos(participante.id);
+
+  const asignado = evento.status === "drawn" ? await aQuienLeRegala(participante.id) : null;
+  const listaDeTuPersona = asignado
+    ? await listaDeDeseos(asignado.receptor.id)
+    : [];
   const presupuesto = formatearPresupuesto(
     evento.budgetAmount,
     evento.budgetCurrency,
@@ -95,24 +106,107 @@ export default async function MiEvento({
         </TarjetaCuerpo>
       </Tarjeta>
 
-      <Tarjeta>
-        <TarjetaCuerpo className="flex flex-wrap items-center gap-4">
-          <span className="grid size-12 place-items-center rounded-2xl border-[3px] border-tinta bg-rojo text-blanco shadow-dura-sm">
-            <Gift className="size-6" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <TituloSeccion>A quién le regalas</TituloSeccion>
-            <p className="text-sm font-semibold text-gris">
-              {evento.status === "drawn"
-                ? "El sorteo ya corrió. Aquí va a aparecer tu persona y su lista."
-                : "Delibird todavía no reparte los nombres. Mientras, arma tu lista para que no te regalen calcetines."}
-            </p>
-          </div>
-          <Insignia tono="espera">
-            {evento.status === "drawn" ? "Fase 2" : "Sin sortear"}
-          </Insignia>
-        </TarjetaCuerpo>
-      </Tarjeta>
+      {asignado ? (
+        <Tarjeta>
+          <TarjetaEncabezado>
+            <TituloSeccion>Te toca regalarle a</TituloSeccion>
+            <Insignia tono="alerta">No le digas a nadie</Insignia>
+          </TarjetaEncabezado>
+
+          <TarjetaCuerpo className="space-y-5">
+            <div className="flex flex-wrap items-center gap-4">
+              <Avatar persona={asignado.receptor} tamano="xl" />
+              <div>
+                <p className="font-display text-3xl font-extrabold">
+                  {asignado.receptor.name}
+                </p>
+                <p className="text-sm font-semibold text-gris">
+                  Anda como {nombreAvatar(asignado.receptor)} en este intercambio.
+                </p>
+              </div>
+            </div>
+
+            {listaDeTuPersona.length === 0 ? (
+              <p className="rounded-2xl border-2 border-tinta bg-amarillo-claro px-4 py-3 text-sm font-semibold">
+                Todavía no ha pedido nada. Si tarda, aquí te va a aparecer su
+                lista en cuanto la arme, y te avisamos por correo.
+              </p>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {listaDeTuPersona.map((deseo) => {
+                  const ganas = GANAS[deseo.priority] ?? GANAS[2];
+                  return (
+                    <li
+                      key={deseo.id}
+                      className="flex gap-3 rounded-2xl border-[3px] border-tinta bg-crema p-3"
+                    >
+                      {deseo.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={deseo.imageUrl}
+                          alt=""
+                          loading="lazy"
+                          className="size-20 shrink-0 rounded-xl border-2 border-tinta bg-blanco object-contain"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <span className="grid size-20 shrink-0 place-items-center rounded-xl border-2 border-tinta bg-blanco text-gris">
+                          <ImageOff className="size-5" />
+                        </span>
+                      )}
+
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <h3 className="font-display font-extrabold leading-tight">
+                          {deseo.title}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Insignia tono={ganas.tono}>{ganas.texto}</Insignia>
+                          {deseo.price ? (
+                            <span className="text-sm font-extrabold text-rojo">
+                              {deseo.price}
+                            </span>
+                          ) : null}
+                        </div>
+                        {deseo.note ? (
+                          <p className="text-sm font-semibold text-gris">
+                            {deseo.note}
+                          </p>
+                        ) : null}
+                        {deseo.url ? (
+                          <a
+                            href={deseo.url}
+                            target="_blank"
+                            rel="noreferrer nofollow"
+                            className="block truncate text-xs font-bold text-azul underline underline-offset-2"
+                          >
+                            {deseo.siteName ?? deseo.url}
+                          </a>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </TarjetaCuerpo>
+        </Tarjeta>
+      ) : (
+        <Tarjeta>
+          <TarjetaCuerpo className="flex flex-wrap items-center gap-4">
+            <span className="grid size-12 place-items-center rounded-2xl border-[3px] border-tinta bg-rojo text-blanco shadow-dura-sm">
+              <Gift className="size-6" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <TituloSeccion>A quién le regalas</TituloSeccion>
+              <p className="text-sm font-semibold text-gris">
+                Delibird todavía no reparte los nombres. Mientras, arma tu lista
+                para que no te regalen calcetines.
+              </p>
+            </div>
+            <Insignia tono="espera">Sin sortear</Insignia>
+          </TarjetaCuerpo>
+        </Tarjeta>
+      )}
 
       <Tarjeta>
         <TarjetaEncabezado>

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, asc, count, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db, schema } from "@/db";
 import { nombreDesdeEmail } from "@/lib/utils";
@@ -64,6 +65,79 @@ export async function participanteDelUsuario(
 
   if (!esSuyo) return null;
   return fila;
+}
+
+export async function reglasDelEvento(eventId: string) {
+  return db
+    .select()
+    .from(schema.rules)
+    .where(eq(schema.rules.eventId, eventId))
+    .orderBy(asc(schema.rules.createdAt));
+}
+
+/** Los que entran al sorteo. */
+export async function jugadoresDelEvento(eventId: string) {
+  return db
+    .select()
+    .from(schema.participants)
+    .where(
+      and(
+        eq(schema.participants.eventId, eventId),
+        eq(schema.participants.isPlaying, true),
+      ),
+    )
+    .orderBy(asc(schema.participants.name));
+}
+
+/** A quién le toca regalarle a quién. Solo para el botón de revelar. */
+export async function asignacionesDelEvento(eventId: string) {
+  const quienDa = alias(schema.participants, "quien_da");
+  const quienRecibe = alias(schema.participants, "quien_recibe");
+
+  return db
+    .select({
+      quienDa: quienDa.name,
+      quienRecibe: quienRecibe.name,
+      notificadoEn: schema.assignments.notifiedAt,
+    })
+    .from(schema.assignments)
+    .innerJoin(quienDa, eq(quienDa.id, schema.assignments.giverId))
+    .innerJoin(quienRecibe, eq(quienRecibe.id, schema.assignments.receiverId))
+    .where(eq(schema.assignments.eventId, eventId))
+    .orderBy(asc(quienDa.name));
+}
+
+/** La persona que le tocó a este invitado (y su ficha completa). */
+export async function aQuienLeRegala(participantId: string) {
+  const [fila] = await db
+    .select({
+      asignacion: schema.assignments,
+      receptor: schema.participants,
+    })
+    .from(schema.assignments)
+    .innerJoin(
+      schema.participants,
+      eq(schema.participants.id, schema.assignments.receiverId),
+    )
+    .where(eq(schema.assignments.giverId, participantId))
+    .limit(1);
+
+  return fila ?? null;
+}
+
+/** Quién le regala a esta persona (para avisarle que movió su lista). */
+export async function quienLeRegalaA(participantId: string) {
+  const [fila] = await db
+    .select({ asignacion: schema.assignments, quienDa: schema.participants })
+    .from(schema.assignments)
+    .innerJoin(
+      schema.participants,
+      eq(schema.participants.id, schema.assignments.giverId),
+    )
+    .where(eq(schema.assignments.receiverId, participantId))
+    .limit(1);
+
+  return fila ?? null;
 }
 
 export async function listaDeDeseos(participantId: string) {

@@ -70,7 +70,7 @@ function cascaron(titulo: string, cuerpo: string) {
 </body></html>`;
 }
 
-function botón(url: string, texto: string) {
+function boton(url: string, texto: string) {
   return `<p style="margin:24px 0"><a href="${url}" style="background:${ROJO};color:#ffffff;text-decoration:none;padding:14px 22px;border-radius:999px;font-weight:700;display:inline-block">${texto}</a></p>`;
 }
 
@@ -78,7 +78,7 @@ export function plantillaMagicLink(url: string, minutos: number) {
   const html = cascaron(
     "Tu acceso llegó volando",
     `<p>Delibird te trae tu enlace de acceso. Vence en ${minutos} minutos y solo sirve una vez.</p>
-     ${botón(url, "Entrar a Secret Delibird")}
+     ${boton(url, "Entrar a Secret Delibird")}
      <p style="font-size:12px;color:#6b7280;word-break:break-all">O pega esta dirección en tu navegador:<br>${url}</p>`,
   );
   const text = `Tu enlace de acceso a Secret Delibird (vence en ${minutos} minutos, un solo uso):\n\n${url}\n`;
@@ -110,7 +110,7 @@ export function plantillaInvitacion(opciones: {
      ${datos ? `<ul style="padding-left:18px;line-height:1.7">${datos}</ul>` : ""}
      ${opciones.mensaje ? `<p style="background:${CREMA};padding:12px;border-radius:12px">${opciones.mensaje}</p>` : ""}
      <p>Entra para armar tu lista de deseos: pega links de lo que te gustaría y quien te regale va a ver las fotos.</p>
-     ${botón(opciones.url, "Armar mi lista de deseos")}
+     ${boton(opciones.url, "Armar mi lista de deseos")}
      <p style="font-size:12px;color:#6b7280">El enlace es tuyo y vence en un rato. Si caduca, pide otro desde la página.</p>`,
   );
 
@@ -121,4 +121,48 @@ ${opciones.url}
 `;
 
   return { subject: `Te invitaron a ${opciones.evento}`, html, text };
+}
+
+export function plantillaSorteo(opciones: {
+  evento: string;
+  url: string;
+  presupuesto: string | null;
+  fecha: string | null;
+}) {
+  const html = cascaron(
+    "Ya salió el sorteo",
+    `<p>Delibird ya repartió los nombres de <strong>${opciones.evento}</strong>.</p>
+     <p>Entra para ver a quién te tocó regalarle y qué trae en su lista de deseos. No te decimos aquí quién es, por si alguien va leyendo sobre tu hombro.</p>
+     ${opciones.fecha ? `<p><strong>El intercambio es:</strong> ${opciones.fecha}</p>` : ""}
+     ${opciones.presupuesto ? `<p><strong>Presupuesto sugerido:</strong> ${opciones.presupuesto}</p>` : ""}
+     ${boton(opciones.url, "Ver a quién me tocó")}`,
+  );
+
+  const text = `Ya salió el sorteo de "${opciones.evento}".
+
+Entra para ver a quién te tocó regalarle:
+${opciones.url}
+`;
+
+  return { subject: `Ya salió el sorteo de ${opciones.evento}`, html, text };
+}
+
+export function plantillaListaActualizada(opciones: {
+  evento: string;
+  url: string;
+}) {
+  const html = cascaron(
+    "Tu persona movió su lista",
+    `<p>A quien le regalas en <strong>${opciones.evento}</strong> acaba de actualizar su lista de deseos.</p>
+     <p>Buen momento para echarle un ojo antes de comprar.</p>
+     ${boton(opciones.url, "Ver su lista")}`,
+  );
+
+  const text = `A quien le regalas en "${opciones.evento}" actualizó su lista de deseos.
+
+Échale un ojo aquí:
+${opciones.url}
+`;
+
+  return { subject: `Actualizaron la lista en ${opciones.evento}`, html, text };
 }

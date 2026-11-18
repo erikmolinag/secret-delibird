@@ -1,11 +1,13 @@
 import {
   CalendarDays,
   Coins,
+  Eye,
   Gift,
   ListChecks,
   MapPin,
   Send,
   Settings2,
+  Shuffle,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -18,6 +20,11 @@ import {
   eliminarInvitadoAccion,
   enviarInvitacionesAccion,
 } from "@/actions/eventos";
+import {
+  deshacerSorteoAccion,
+  revelarAccion,
+  sortearAccion,
+} from "@/actions/sorteo";
 import { Avatar } from "@/components/avatar";
 import { Boton, BotonLink } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -30,7 +37,13 @@ import {
   TituloSeccion,
 } from "@/components/ui/tarjeta";
 import { requerirUsuario } from "@/lib/auth";
-import { eventoDelOrganizador, invitadosDelEvento } from "@/lib/datos";
+import {
+  asignacionesDelEvento,
+  eventoDelOrganizador,
+  invitadosDelEvento,
+  reglasDelEvento,
+} from "@/lib/datos";
+import { analizar, type ReglaSorteo } from "@/lib/sorteo";
 import {
   aValorInputFecha,
   formatearFecha,
@@ -44,10 +57,13 @@ export const instant = false;
 
 export default async function PanelEvento({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ revelar?: string }>;
 }) {
   const { id } = await params;
+  const { revelar } = await searchParams;
   const usuario = await requerirUsuario();
 
   const evento = await eventoDelOrganizador(id, usuario.id);
@@ -63,6 +79,23 @@ export default async function PanelEvento({
     evento.budgetAmount,
     evento.budgetCurrency,
   );
+
+  const jugadores = invitados.filter((p) => p.isPlaying);
+  const reglas = await reglasDelEvento(id);
+  const analisis = analizar(
+    jugadores.map((j) => ({ id: j.id, nombre: j.name })),
+    reglas.map(
+      (r): ReglaSorteo => ({
+        tipo: r.type,
+        from: r.fromParticipantId,
+        to: r.toParticipantId,
+        bidireccional: r.bidirectional,
+      }),
+    ),
+  );
+
+  const yaSorteado = evento.status === "drawn";
+  const parejas = yaSorteado && revelar ? await asignacionesDelEvento(id) : [];
 
   return (
     <div className="space-y-8">
@@ -241,17 +274,102 @@ export default async function PanelEvento({
         </TarjetaCuerpo>
       </Tarjeta>
 
-      <Tarjeta className="border-dashed">
-        <TarjetaCuerpo className="flex flex-wrap items-center gap-4">
-          <Gift className="size-8 text-rojo" />
-          <div className="min-w-0 flex-1">
-            <TituloSeccion>Reglas y sorteo</TituloSeccion>
-            <p className="text-sm text-gris">
-              Exclusiones, listas blancas, asignaciones fijas y el sorteo en si
-              son la siguiente fase. La base de datos ya los guarda.
-            </p>
+      <Tarjeta>
+        <TarjetaEncabezado>
+          <TituloSeccion>Reglas y sorteo</TituloSeccion>
+          <Insignia tono={yaSorteado ? "listo" : analisis.ok ? "info" : "alerta"}>
+            {yaSorteado
+              ? `Sorteado ${formatearFecha(evento.drawnAt, false) ?? ""}`
+              : analisis.ok
+                ? "Listo para sortear"
+                : "Reglas imposibles"}
+          </Insignia>
+        </TarjetaEncabezado>
+
+        <TarjetaCuerpo className="space-y-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="grid size-12 place-items-center rounded-2xl border-[3px] border-tinta bg-rojo text-blanco shadow-dura-sm">
+              <Gift className="size-6" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">
+                {reglas.length === 0
+                  ? "Sin reglas: a cualquiera le puede tocar cualquiera."
+                  : `${reglas.length} regla${reglas.length === 1 ? "" : "s"} configurada${reglas.length === 1 ? "" : "s"}.`}{" "}
+                {jugadores.length} personas jugando.
+              </p>
+              {!analisis.ok ? (
+                <p className="mt-1 text-sm font-bold text-rojo-oscuro">
+                  {analisis.problemas[0]?.motivo}
+                </p>
+              ) : null}
+            </div>
+            <BotonLink
+              href={`/eventos/${evento.id}/reglas`}
+              variante="fantasma"
+              tamano="sm"
+            >
+              <Shuffle className="size-4" />
+              {yaSorteado ? "Ver reglas" : "Configurar reglas"}
+            </BotonLink>
           </div>
-          <Insignia tono="espera">Fase 2</Insignia>
+
+          {!yaSorteado && analisis.ok ? (
+            <form action={sortearAccion}>
+              <input type="hidden" name="eventId" value={evento.id} />
+              <BotonEnvio className="w-full" tamano="lg" cargando="Repartiendo...">
+                Sortear y avisar a todos
+              </BotonEnvio>
+            </form>
+          ) : null}
+
+          {yaSorteado ? (
+            <div className="flex flex-wrap gap-2">
+              {!revelar ? (
+                <form action={revelarAccion}>
+                  <input type="hidden" name="eventId" value={evento.id} />
+                  <BotonEnvio variante="fantasma" tamano="sm" cargando="Abriendo...">
+                    <Eye className="size-4" />
+                    Revelar quién le regala a quién
+                  </BotonEnvio>
+                </form>
+              ) : null}
+
+              <form action={deshacerSorteoAccion}>
+                <input type="hidden" name="eventId" value={evento.id} />
+                <BotonEnvio variante="peligro" tamano="sm" cargando="Deshaciendo...">
+                  Deshacer y volver a sortear
+                </BotonEnvio>
+              </form>
+
+              <p className="w-full text-xs font-semibold text-gris">
+                Deshacer se puede aunque ya hayas avisado: el correo no dice
+                quién te tocó, solo lleva aquí. Quien ya haya entrado, eso sí, ya
+                vio un nombre.
+              </p>
+            </div>
+          ) : null}
+
+          {parejas.length ? (
+            <div className="space-y-2">
+              <p className="rounded-2xl border-2 border-tinta bg-amarillo-claro px-3 py-2 text-sm font-bold">
+                Quedó anotado que abriste esto. Ya no hay vuelta atrás con la
+                sorpresa.
+              </p>
+              <ul className="divide-y-2 divide-tinta/15 rounded-2xl border-2 border-tinta bg-crema">
+                {parejas.map((pareja) => (
+                  <li
+                    key={`${pareja.quienDa}-${pareja.quienRecibe}`}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-semibold"
+                  >
+                    <span className="font-bold">{pareja.quienDa}</span>
+                    <span className="text-gris">le regala a</span>
+                    <span className="font-bold">{pareja.quienRecibe}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </TarjetaCuerpo>
       </Tarjeta>
 

@@ -9,11 +9,33 @@ con reglas de verdad.
 | Fase | Qué incluye | Estado |
 | --- | --- | --- |
 | 1 | Acceso por magic link, eventos, invitados, correos de invitación, listas de deseos con preview de links, avatar a elegir (entrenador o cualquier Pokémon) | ✅ listo |
-| 2 | Reglas del sorteo (exclusiones, listas blancas, pins), sorteo, correo de "ya te tocó", aviso de lista actualizada | ⏳ pendiente |
-| 3 | Tema a fondo, apartar regalos sin que el dueño lo vea, pulido | ⏳ pendiente |
+| 2 | Reglas del sorteo (exclusiones, listas blancas, asignaciones fijas), sorteo con diagnóstico, correos de "ya salió" y "movieron su lista", botón de revelar con bitácora | ✅ listo |
+| 3 | Apartar regalos sin que el dueño lo vea, recordatorios, pulido | ⏳ pendiente |
 
-Las tablas de la fase 2 (`rules`, `assignments`, `reservations`, `reveal_log`) ya
-existen en la base de datos.
+## El sorteo
+
+El motor vive en [`src/lib/sorteo.ts`](src/lib/sorteo.ts) y no toca la base de
+datos: entran jugadores y reglas, sale una asignación o una explicación.
+
+Es un emparejamiento perfecto en un grafo bipartito (quien da → quien recibe):
+
+1. **Dominios.** Para cada persona se arma el conjunto de a quién puede
+   regalarle: todos menos ella, menos sus exclusiones, y si tiene lista blanca,
+   solo los de su lista. Las asignaciones fijas dejan un dominio de uno y borran
+   a esa persona del dominio de los demás.
+2. **¿Se puede?** Emparejamiento máximo con el algoritmo de Kuhn. Si no alcanza
+   para todos, se busca el grupo que rompe la condición de Hall y se dice con
+   nombres: *"Ana, Luis y Jorge (3 personas) solo pueden regalarle a María y
+   Pedro (2). No alcanza"*. Eso es lo que muestra el panel de reglas en vivo.
+3. **Reparto.** Backtracking aleatorizado con MRV (primero quien tenga menos
+   opciones), que además respeta "evitar parejas mutuas", algo que el
+   emparejamiento solo no puede garantizar.
+
+60 personas con 15 parejas excluidas se resuelven en unos 20 ms.
+
+```bash
+npm test     # 11 pruebas del motor, con node --test
+```
 
 ## Stack
 
