@@ -72,7 +72,7 @@ Necesitas Node 24+ y Docker.
 ```bash
 docker compose up -d        # Postgres en localhost:5433
 npm install
-npm run db:push             # crea las tablas
+npm run db:migrate          # crea las tablas desde drizzle/
 npm run dev                 # http://localhost:3000
 ```
 
@@ -84,6 +84,23 @@ Para probar como en producción (los server actions se portan distinto):
 ```bash
 npm run build && npm start
 ```
+
+## Cambiar el esquema
+
+1. Edita `src/db/schema.ts`.
+2. `npm run db:generate` escribe el SQL nuevo en `drizzle/`. **Ese archivo se
+   commitea**: es lo que se va a correr en producción.
+3. `npm run db:migrate` lo aplica en local; el mismo comando con la `DATABASE_URL`
+   de Neon lo aplica en producción.
+
+`npm run db:push` sigue existiendo para iterar rápido en local (sincroniza sin
+generar archivos), pero deja la base fuera del registro de migraciones. Si la
+usaste y quieres volver al carril, `docker compose down -v && docker compose up -d`
+y luego `npm run db:migrate`.
+
+`drizzle.config.ts` respeta la `DATABASE_URL` que ya venga del entorno y solo lee
+`.env.local` cuando no hay ninguna, para que una corrida apuntando a otra base no
+se quede hablando con la de local.
 
 ## Variables de entorno
 
@@ -101,8 +118,17 @@ Copia `.env.example` a `.env.local`:
 
 1. **Neon**: crea un proyecto y copia la connection string (la pooled) a `DATABASE_URL`.
 2. **Vercel**: importa el repo, pega las cuatro variables y despliega.
-3. **Migraciones**: `npm run db:push` apuntando a Neon, o `npm run db:generate` +
-   `npm run db:migrate` si prefieres migraciones versionadas.
+3. **Migraciones**: con la cadena de Neon en el entorno, una sola vez:
+
+   ```bash
+   DATABASE_URL="postgres://...neon.tech/..." npm run db:migrate
+   ```
+
+   El SQL versionado vive en `drizzle/` y se aplica en orden; Drizzle lleva la
+   cuenta en su propia tabla, así que correrlo dos veces no hace nada. Si
+   prefieres que Vercel lo haga en cada despliegue, cambia el script `build` a
+   `drizzle-kit migrate && next build` (la variable ya está en el entorno del
+   build), a cambio de que un error de migración tumbe el despliegue.
 4. **Resend**: verifica el dominio (te da registros SPF y DKIM para el DNS) y usa
    `delibird@tudominio.com` en `EMAIL_FROM`. Mientras tanto sirve
    `onboarding@resend.dev`, pero cae en spam más fácil.
