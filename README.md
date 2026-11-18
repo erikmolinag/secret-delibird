@@ -116,26 +116,66 @@ Copia `.env.example` a `.env.local`:
 
 ## Desplegar (Vercel + Neon + Resend)
 
-1. **Neon**: crea un proyecto y copia la connection string (la pooled) a `DATABASE_URL`.
-2. **Vercel**: importa el repo, pega las cuatro variables y despliega.
-3. **Migraciones**: con la cadena de Neon en el entorno, una sola vez:
+### 1. Neon (la base)
 
-   ```bash
-   DATABASE_URL="postgres://...neon.tech/..." npm run db:migrate
-   ```
+Crea un proyecto con Postgres 17 en la región más cercana a la de Vercel
+(`us-east-1` si dejas el default `iad1`). Neon te da **dos** cadenas y la
+diferencia importa:
 
-   El SQL versionado vive en `drizzle/` y se aplica en orden; Drizzle lleva la
-   cuenta en su propia tabla, así que correrlo dos veces no hace nada. Si
-   prefieres que Vercel lo haga en cada despliegue, cambia el script `build` a
-   `drizzle-kit migrate && next build` (la variable ya está en el entorno del
-   build), a cambio de que un error de migración tumbe el despliegue.
-4. **Resend**: verifica el dominio (te da registros SPF y DKIM para el DNS) y usa
-   `delibird@tudominio.com` en `EMAIL_FROM`. Mientras tanto sirve
-   `onboarding@resend.dev`, pero cae en spam más fácil.
-5. **Dominio**: apúntalo a Vercel y pon `APP_URL=https://tudominio.com`.
+- La **pooled** (dice `-pooler` en el host) va en `DATABASE_URL`. Es la que
+  aguanta muchas conexiones cortas, que es justo lo que hace serverless.
+- La **directa** (sin `-pooler`) es para correr migraciones: el pooler trabaja
+  en modo transacción y se atraganta con algunos DDL.
+
+```bash
+DATABASE_URL="postgres://...neon.tech/neondb?sslmode=require" npm run db:migrate
+```
+
+El SQL versionado vive en `drizzle/` y se aplica en orden; Drizzle lleva la
+cuenta en su propia tabla, así que correrlo dos veces no hace nada. Si prefieres
+que Vercel lo corra en cada despliegue, cambia el script `build` a
+`drizzle-kit migrate && next build`, a cambio de que un error de migración tumbe
+el despliegue.
+
+En el plan gratis la base se duerme a los cinco minutos sin uso: la primera
+visita después de un rato tarda un segundo más.
+
+### 2. Resend (el correo)
+
+Crea una API key con permiso solo de envío. Mientras no verifiques un dominio
+puedes usar `onboarding@resend.dev`, **pero Resend solo deja mandar a tu propio
+correo**: los invitados no van a recibir nada hasta que el dominio esté
+verificado. Para verificarlo, Resend te da tres registros de DNS (MX y SPF en el
+subdominio `send`, y el DKIM en `resend._domainkey`) que van en la misma zona
+donde apuntes el dominio a Vercel.
+
+### 3. Vercel (la app)
+
+Importa el repo, deja el preset de Next.js y pon las cinco variables en
+Production y Preview:
+
+| Variable | Valor |
+| --- | --- |
+| `DATABASE_URL` | la cadena **pooled** de Neon |
+| `AUTH_SECRET` | `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
+| `RESEND_API_KEY` | la key `re_...` |
+| `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>` |
+| `APP_URL` | `https://tudominio.com` |
+
+Cambiar una variable no afecta al sitio hasta que vuelves a desplegar.
+
+### 4. El dominio
+
+Cómpralo donde quieras, agrégalo en Settings → Domains y pon los registros que
+Vercel te dé (normalmente un `A` de `@` y un `CNAME` de `www`). Después cambia
+`APP_URL` al dominio final y redespliega: esa variable es la base de todos los
+magic links, así que si apunta al lugar equivocado los correos llevan a la nada.
+Si se te olvida ponerla, la app usa el dominio que Vercel le asigna en lugar de
+`localhost`, pero es un parche, no el plan.
 
 Todo esto cabe en los planes gratis de Vercel, Neon y Resend para un evento
-familiar. Lo único que cuesta es el dominio.
+familiar (Vercel Hobby es solo para uso no comercial). Lo único que cuesta es el
+dominio.
 
 ## Cómo está armado
 

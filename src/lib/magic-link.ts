@@ -14,8 +14,19 @@ function hashear(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+/**
+ * La base de todos los magic links. Si en producción se olvida APP_URL, Vercel
+ * nos da su propio dominio: peor sería mandar correos que apuntan a localhost.
+ */
 export function urlBase() {
-  return process.env.APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+  const configurada = process.env.APP_URL?.replace(/\/$/, "");
+  if (configurada) return configurada;
+
+  const enVercel =
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL;
+  if (enVercel) return `https://${enVercel}`;
+
+  return "http://localhost:3000";
 }
 
 /** Crea un magic link de un solo uso. Solo guardamos el hash del token. */
