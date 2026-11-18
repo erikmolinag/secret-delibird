@@ -46,12 +46,13 @@ async function NavUsuario() {
         title={`Mi perfil (${usuario.name ?? usuario.email})`}
         className="transition hover:-translate-y-0.5"
       >
-        <AvatarEntrenador trainerKey={usuario.trainerKey} tamano="sm" />
+        <AvatarEntrenador trainerKey={usuario.trainerKey} tamano="xs" />
         <span className="sr-only">Mi perfil</span>
       </Link>
 
       <BotonLink href="/eventos" variante="fantasma" tamano="sm">
-        Mis eventos
+        <span className="sm:hidden">Eventos</span>
+        <span className="hidden sm:inline">Mis eventos</span>
       </BotonLink>
       <form action={cerrarSesionAccion}>
         <button

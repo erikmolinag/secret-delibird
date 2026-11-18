@@ -2,6 +2,7 @@
 
 import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { db, schema } from "@/db";
 import { requerirUsuario } from "@/lib/auth";
@@ -31,8 +32,13 @@ export async function actualizarPerfilAccion(datos: FormData) {
     .set({
       name: nombre?.slice(0, 60) ?? usuario.name,
       trainerKey: entrenador,
+      onboardedAt: usuario.onboardedAt ?? new Date(),
     })
     .where(eq(schema.users.id, usuario.id));
+
+  // Si venía de entrar por primera vez, lo devolvemos a donde iba.
+  const siguiente = texto(datos, "siguiente");
+  if (siguiente?.startsWith("/")) redirect(siguiente);
 
   refresh();
 }

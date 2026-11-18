@@ -53,6 +53,7 @@ import {
   aValorInputFecha,
   formatearFecha,
   formatearPresupuesto,
+  nombreVisible,
 } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Panel del evento" };
@@ -88,7 +89,7 @@ export default async function PanelEvento({
   const jugadores = invitados.filter((p) => p.isPlaying);
   const reglas = await reglasDelEvento(id);
   const analisis = analizar(
-    jugadores.map((j) => ({ id: j.id, nombre: j.name })),
+    jugadores.map((j) => ({ id: j.id, nombre: nombreVisible(j) })),
     reglas.map(
       (r): ReglaSorteo => ({
         tipo: r.type,
@@ -206,7 +207,7 @@ export default async function PanelEvento({
 
               <div className="min-w-0 flex-1">
                 <p className="truncate font-bold">
-                  {invitado.name}
+                  {nombreVisible(invitado)}
                   {invitado.isOrganizer ? (
                     <span className="ml-2 text-xs font-bold text-rojo">
                       organiza
@@ -243,8 +244,8 @@ export default async function PanelEvento({
                       tamano="sm"
                       title={
                         invitado.isPlaying
-                          ? `Sacar a ${invitado.name} del sorteo`
-                          : `Meter a ${invitado.name} al sorteo`
+                          ? `Sacar a ${nombreVisible(invitado)} del sorteo`
+                          : `Meter a ${nombreVisible(invitado)} al sorteo`
                       }
                     >
                       {invitado.isPlaying ? (
@@ -284,7 +285,7 @@ export default async function PanelEvento({
                         type="submit"
                         variante="peligro"
                         tamano="sm"
-                        title={`Quitar a ${invitado.name}`}
+                        title={`Quitar a ${nombreVisible(invitado)}`}
                       >
                         <Trash2 className="size-3.5" />
                       </Boton>

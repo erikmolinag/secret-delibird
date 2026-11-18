@@ -14,7 +14,11 @@ import {
 import { crearMagicLink } from "@/lib/magic-link";
 import { enviarCorreo, plantillaSorteo } from "@/lib/mail";
 import { sortear, type ReglaSorteo } from "@/lib/sorteo";
-import { formatearFecha, formatearPresupuesto } from "@/lib/utils";
+import {
+  formatearFecha,
+  formatearPresupuesto,
+  nombreVisible,
+} from "@/lib/utils";
 
 function texto(datos: FormData, campo: string) {
   const valor = datos.get(campo);
@@ -94,7 +98,7 @@ export async function sortearAccion(datos: FormData) {
   const reglas = await reglasDelEvento(evento.id);
 
   const resultado = sortear(
-    jugadores.map((j) => ({ id: j.id, nombre: j.name })),
+    jugadores.map((j) => ({ id: j.id, nombre: nombreVisible(j) })),
     reglas.map(
       (r): ReglaSorteo => ({
         tipo: r.type,

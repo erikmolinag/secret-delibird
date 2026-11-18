@@ -37,7 +37,11 @@ import {
   listaDeDeseos,
   participanteDelUsuario,
 } from "@/lib/datos";
-import { formatearFecha, formatearPresupuesto } from "@/lib/utils";
+import {
+  formatearFecha,
+  formatearPresupuesto,
+  nombreVisible,
+} from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Mi lista de deseos" };
 
@@ -107,7 +111,7 @@ export default async function MiEvento({
         <p className="font-display text-sm font-extrabold uppercase tracking-wide text-azul-oscuro">
           {evento.name}
         </p>
-        <h1 className="text-3xl font-extrabold">Hola, {participante.name}</h1>
+        <h1 className="text-3xl font-extrabold">Hola, {nombreVisible(participante)}</h1>
 
         {datosEvento.length ? (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -169,7 +173,7 @@ export default async function MiEvento({
               <Avatar persona={asignado.receptor} tamano="xl" />
               <div>
                 <p className="font-display text-3xl font-extrabold">
-                  {asignado.receptor.name}
+                  {nombreVisible(asignado.receptor)}
                 </p>
                 <p className="text-sm font-semibold text-gris">
                   Anda con{" "}

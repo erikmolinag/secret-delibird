@@ -25,5 +25,13 @@ export async function GET(peticion: NextRequest) {
       ? resultado.redirectTo
       : "/eventos";
 
+  // La primera vez que alguien entra —porque se registró o porque aceptó una
+  // invitación— lo primero es ponerse nombre y cara. Luego sigue a donde iba.
+  if (!resultado.usuario.onboardedAt) {
+    const perfil = new URL("/perfil", peticion.url);
+    perfil.searchParams.set("siguiente", destino);
+    return NextResponse.redirect(perfil);
+  }
+
   return NextResponse.redirect(new URL(destino, peticion.url));
 }

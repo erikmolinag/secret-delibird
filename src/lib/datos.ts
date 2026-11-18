@@ -9,6 +9,7 @@ import {
   getTableColumns,
   inArray,
   isNotNull,
+  sql,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
@@ -28,11 +29,16 @@ export async function eventosDelUsuario(userId: string) {
 export async function participacionesDelUsuario(userId: string) {
   return db
     .select({
-      participante: schema.participants,
+      participante: {
+        ...getTableColumns(schema.participants),
+        trainerKey: schema.users.trainerKey,
+        nombrePerfil: schema.users.name,
+      },
       evento: schema.events,
     })
     .from(schema.participants)
     .innerJoin(schema.events, eq(schema.events.id, schema.participants.eventId))
+    .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
     .where(eq(schema.participants.userId, userId))
     .orderBy(desc(schema.events.createdAt));
 }
@@ -51,6 +57,7 @@ export async function invitadosDelEvento(eventId: string) {
     .select({
       ...getTableColumns(schema.participants),
       trainerKey: schema.users.trainerKey,
+      nombrePerfil: schema.users.name,
     })
     .from(schema.participants)
     .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
@@ -68,6 +75,7 @@ export async function participanteDelUsuario(
       participante: {
         ...getTableColumns(schema.participants),
         trainerKey: schema.users.trainerKey,
+      nombrePerfil: schema.users.name,
       },
       evento: schema.events,
     })
@@ -101,6 +109,7 @@ export async function jugadoresDelEvento(eventId: string) {
     .select({
       ...getTableColumns(schema.participants),
       trainerKey: schema.users.trainerKey,
+      nombrePerfil: schema.users.name,
     })
     .from(schema.participants)
     .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
@@ -117,16 +126,21 @@ export async function jugadoresDelEvento(eventId: string) {
 export async function asignacionesDelEvento(eventId: string) {
   const quienDa = alias(schema.participants, "quien_da");
   const quienRecibe = alias(schema.participants, "quien_recibe");
+  const perfilDa = alias(schema.users, "perfil_da");
+  const perfilRecibe = alias(schema.users, "perfil_recibe");
 
+  // El nombre bueno es el del perfil; si no hay cuenta, el que puso quien organiza.
   return db
     .select({
-      quienDa: quienDa.name,
-      quienRecibe: quienRecibe.name,
+      quienDa: sql<string>`coalesce(nullif(trim(${perfilDa.name}), ''), ${quienDa.name})`,
+      quienRecibe: sql<string>`coalesce(nullif(trim(${perfilRecibe.name}), ''), ${quienRecibe.name})`,
       notificadoEn: schema.assignments.notifiedAt,
     })
     .from(schema.assignments)
     .innerJoin(quienDa, eq(quienDa.id, schema.assignments.giverId))
     .innerJoin(quienRecibe, eq(quienRecibe.id, schema.assignments.receiverId))
+    .leftJoin(perfilDa, eq(perfilDa.id, quienDa.userId))
+    .leftJoin(perfilRecibe, eq(perfilRecibe.id, quienRecibe.userId))
     .where(eq(schema.assignments.eventId, eventId))
     .orderBy(asc(quienDa.name));
 }
@@ -139,6 +153,7 @@ export async function aQuienLeRegala(participantId: string) {
       receptor: {
         ...getTableColumns(schema.participants),
         trainerKey: schema.users.trainerKey,
+      nombrePerfil: schema.users.name,
       },
     })
     .from(schema.assignments)

@@ -27,6 +27,8 @@ export const users = pgTable("users", {
   name: text("name"),
   /** Sprite de entrenador de tu perfil (clave de Pokemon Showdown). */
   trainerKey: text("trainer_key"),
+  /** Cuando llenó su perfil por primera vez. Null = todavía no pasa por ahí. */
+  onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

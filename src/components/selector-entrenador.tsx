@@ -31,13 +31,13 @@ export function SelectorEntrenador({ inicial }: { inicial: string | null }) {
         </div>
       </div>
 
-      <div className="max-h-96 space-y-4 overflow-y-auto rounded-3xl border-[3px] border-tinta bg-crema p-4">
+      <div className="max-h-[32rem] space-y-4 overflow-y-auto rounded-3xl border-[3px] border-tinta bg-crema p-4 sm:max-h-96">
         {GRUPOS_ENTRENADORES.map((grupo) => (
           <div key={grupo.grupo}>
             <h3 className="mb-2 font-display text-sm font-extrabold uppercase tracking-wide text-azul-oscuro">
               {grupo.grupo}
             </h3>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
               {grupo.entrenadores.map((entrenador) => (
                 <button
                   key={entrenador.clave}
@@ -56,7 +56,7 @@ export function SelectorEntrenador({ inicial }: { inicial: string | null }) {
                     src={urlEntrenador(entrenador.clave)}
                     alt={entrenador.nombre}
                     loading="lazy"
-                    className="h-16 w-full object-contain [image-rendering:pixelated]"
+                    className="h-24 w-full object-contain [image-rendering:pixelated] sm:h-20"
                     referrerPolicy="no-referrer"
                   />
                   <span className="text-xs font-bold">{entrenador.nombre}</span>

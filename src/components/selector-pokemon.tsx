@@ -67,7 +67,7 @@ export function SelectorPokemon({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-4">
-        <span className="grid size-24 shrink-0 place-items-center rounded-full border-[3px] border-tinta bg-crema-2 shadow-dura-sm">
+        <span className="grid size-32 shrink-0 place-items-center rounded-full border-[3px] border-tinta bg-crema-2 shadow-dura-sm sm:size-28">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={spritePokemon(pokemonId)}
@@ -120,7 +120,7 @@ export function SelectorPokemon({
             </p>
           ) : null}
 
-          <div className="grid max-h-80 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-6">
+          <div className="grid max-h-[26rem] grid-cols-3 gap-2 overflow-y-auto pr-1 sm:max-h-80 sm:grid-cols-5">
             {resultados.map((pokemon) => (
               <button
                 key={pokemon.id}
@@ -135,7 +135,7 @@ export function SelectorPokemon({
                   src={spritePokemon(pokemon.id)}
                   alt={pokemon.nombre}
                   loading="lazy"
-                  className="size-14 object-contain [image-rendering:pixelated]"
+                  className="size-20 object-contain [image-rendering:pixelated] sm:size-16"
                   referrerPolicy="no-referrer"
                 />
                 <span className="w-full truncate text-center text-xs font-bold">

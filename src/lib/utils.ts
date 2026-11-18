@@ -74,3 +74,15 @@ export function nombreDesdeEmail(email: string) {
     .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
     .join(" ");
 }
+
+/**
+ * El nombre que se muestra de alguien dentro de un evento: manda el de su
+ * perfil (lo eligió esa persona) y, si todavía no tiene cuenta, el que le puso
+ * quien organiza al invitarlo.
+ */
+export function nombreVisible(persona: {
+  name: string;
+  nombrePerfil?: string | null;
+}) {
+  return persona.nombrePerfil?.trim() || persona.name;
+}

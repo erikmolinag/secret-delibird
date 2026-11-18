@@ -20,6 +20,7 @@ import {
   reglasDelEvento,
 } from "@/lib/datos";
 import { analizar, type ReglaSorteo } from "@/lib/sorteo";
+import { nombreVisible } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Reglas del sorteo" };
 
@@ -51,7 +52,7 @@ function Selector({
       </option>
       {jugadores.map((jugador) => (
         <option key={jugador.id} value={jugador.id}>
-          {jugador.name}
+          {nombreVisible(jugador)}
         </option>
       ))}
     </select>
@@ -107,10 +108,10 @@ export default async function Reglas({
 
   const porId = new Map(jugadores.map((j) => [j.id, j]));
   const nombre = (participantId: string) =>
-    porId.get(participantId)?.name ?? "alguien que ya no está";
+    (() => { const j = porId.get(participantId); return j ? nombreVisible(j) : "alguien que ya no está"; })();
 
   const analisis = analizar(
-    jugadores.map((j) => ({ id: j.id, nombre: j.name })),
+    jugadores.map((j) => ({ id: j.id, nombre: nombreVisible(j) })),
     reglas.map(
       (r): ReglaSorteo => ({
         tipo: r.type,
