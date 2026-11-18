@@ -18,6 +18,7 @@ const uuid = () =>
 export const eventStatus = pgEnum("event_status", ["draft", "drawn"]);
 export const ruleType = pgEnum("rule_type", ["exclude", "whitelist", "pin"]);
 export const imageSource = pgEnum("image_source", ["scraped", "manual", "none"]);
+export const avatarKind = pgEnum("avatar_kind", ["pokemon", "entrenador"]);
 
 /** Cuentas reales: cualquiera que haya entrado con un magic link. */
 export const users = pgTable("users", {
@@ -77,8 +78,14 @@ export const participants = pgTable(
     name: text("name").notNull(),
     /** Se llena cuando la persona entra por primera vez. */
     userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
-    /** Numero de la Pokédex que le toca como avatar. */
+    /** Avatar: un Pokémon de la Pokédex o un sprite de entrenador. */
+    avatarKind: avatarKind("avatar_kind").default("pokemon").notNull(),
+    /** Número de la Pokédex que le toca de entrada (y el que elija después). */
     pokemonId: integer("pokemon_id").notNull(),
+    /** Clave del sprite de entrenador, cuando eligió uno. */
+    trainerKey: text("trainer_key"),
+    /** Nombre que se muestra bajo el avatar ("Snorlax", "Hilda"). */
+    avatarNombre: text("avatar_nombre"),
     isOrganizer: boolean("is_organizer").default(false).notNull(),
     /** Si queda fuera del sorteo pero sigue viendo el evento. */
     isPlaying: boolean("is_playing").default(true).notNull(),

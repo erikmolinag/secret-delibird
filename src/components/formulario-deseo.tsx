@@ -80,7 +80,7 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
       </Campo>
 
       {intentado ? (
-        <div className="flex items-center gap-4 rounded-2xl border border-noche-borde/70 bg-noche/50 p-3">
+        <div className="flex items-center gap-4 rounded-2xl border-[3px] border-tinta bg-crema p-3">
           {preview?.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -90,11 +90,11 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <span className="grid size-20 shrink-0 place-items-center rounded-xl border border-noche-borde text-humo">
+            <span className="grid size-20 shrink-0 place-items-center rounded-xl border-2 border-tinta bg-blanco text-gris">
               <ImageOff className="size-6" />
             </span>
           )}
-          <p className="text-sm text-humo">
+          <p className="text-sm text-gris">
             {preview?.imageUrl
               ? `Imagen encontrada${preview.siteName ? ` en ${preview.siteName}` : ""}.`
               : "Esa página no dejó leer su imagen. Pega abajo la dirección de una foto o sube el link de la imagen que quieras."}
@@ -148,8 +148,8 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
         <AreaTexto id="note" name="note" maxLength={500} />
       </Campo>
 
-      <details className="rounded-2xl border border-noche-borde/70 px-4 py-3" open={sinImagen}>
-        <summary className="cursor-pointer text-sm font-bold text-hielo">
+      <details className="rounded-2xl border-[3px] border-tinta px-4 py-3" open={sinImagen}>
+        <summary className="cursor-pointer text-sm font-bold text-azul">
           Poner la imagen a mano
         </summary>
         <div className="pt-3">

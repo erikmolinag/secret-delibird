@@ -18,7 +18,7 @@ export default async function NuevoEvento() {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <h1 className="text-3xl font-extrabold">Nuevo intercambio</h1>
-        <p className="text-sm text-humo">
+        <p className="text-sm text-gris">
           Lo único obligatorio es el nombre. Todo lo demás lo puedes cambiar
           después.
         </p>
@@ -94,8 +94,8 @@ export default async function NuevoEvento() {
               />
             </Campo>
 
-            <fieldset className="space-y-3 rounded-2xl border border-noche-borde/70 p-4">
-              <legend className="px-1 text-sm font-bold text-hielo">
+            <fieldset className="space-y-3 rounded-2xl border-[3px] border-tinta bg-crema p-4">
+              <legend className="px-1 text-sm font-bold text-azul">
                 Cómo quieres jugar
               </legend>
 
@@ -108,7 +108,7 @@ export default async function NuevoEvento() {
                 />
                 <span>
                   Yo también juego
-                  <span className="block text-xs text-humo">
+                  <span className="block text-xs text-gris">
                     Entras al sorteo como cualquier invitado. Las asignaciones
                     quedan ocultas, incluso para ti.
                   </span>
@@ -123,7 +123,7 @@ export default async function NuevoEvento() {
                 />
                 <span>
                   Evitar parejas mutuas
-                  <span className="block text-xs text-humo">
+                  <span className="block text-xs text-gris">
                     Que no pase que A le regale a B y B a A.
                   </span>
                 </span>

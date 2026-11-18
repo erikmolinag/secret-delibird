@@ -15,21 +15,21 @@ export function FormularioAcceso({ redirectTo }: { redirectTo?: string }) {
   if (estado.ok) {
     return (
       <div className="space-y-4 text-center">
-        <Mail className="mx-auto size-10 text-dorado" />
+        <Mail className="mx-auto size-10 text-rojo" />
         <h2 className="text-2xl font-bold">Revisa tu correo</h2>
-        <p className="text-sm text-humo">
-          Delibird va en camino a <strong className="text-nieve">{estado.email}</strong>{" "}
+        <p className="text-sm text-gris">
+          Delibird va en camino a <strong className="text-tinta">{estado.email}</strong>{" "}
           con tu enlace de acceso. Vence en 20 minutos y solo sirve una vez.
         </p>
 
         {estado.enlaceDev ? (
-          <div className="rounded-2xl border border-dorado/40 bg-dorado/10 p-4 text-left">
-            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-dorado">
+          <div className="rounded-2xl border-[3px] border-tinta bg-amarillo-claro p-4 text-left">
+            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-rojo">
               Modo desarrollo: no hay RESEND_API_KEY
             </p>
             <a
               href={estado.enlaceDev}
-              className="break-all text-sm text-hielo underline underline-offset-2"
+              className="break-all text-sm text-azul underline underline-offset-2"
             >
               {estado.enlaceDev}
             </a>
@@ -60,7 +60,7 @@ export function FormularioAcceso({ redirectTo }: { redirectTo?: string }) {
       </Campo>
 
       {estado.error ? (
-        <p className="rounded-2xl border border-rojo/40 bg-rojo/10 px-4 py-2.5 text-sm text-[#ff9aa6]">
+        <p className="rounded-2xl border-[3px] border-tinta bg-rojo-claro px-4 py-2.5 text-sm text-rojo-oscuro">
           {estado.error}
         </p>
       ) : null}

@@ -17,8 +17,8 @@ export function Marca({
     >
       <span
         className={cn(
-          "grid place-items-center rounded-full border-2 border-nieve/80 bg-rojo shadow-brillo transition group-hover:rotate-6",
-          tamano === "lg" ? "size-14" : "size-10",
+          "grid shrink-0 place-items-center rounded-full border-[3px] border-tinta bg-blanco shadow-dura-sm transition group-hover:-rotate-6",
+          tamano === "lg" ? "size-16" : "size-11",
         )}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -29,14 +29,17 @@ export function Marca({
           referrerPolicy="no-referrer"
         />
       </span>
+
       <span
         className={cn(
           "font-display font-extrabold leading-none",
-          tamano === "lg" ? "text-3xl" : "text-xl",
+          tamano === "lg" ? "text-4xl" : "text-2xl",
         )}
       >
-        <span className="text-nieve">Secret </span>
-        <span className="text-dorado">Delibird</span>
+        <span className="text-azul-oscuro">Secret </span>
+        <span className={tamano === "lg" ? "texto-logo" : "texto-logo-sm"}>
+          Delibird
+        </span>
       </span>
     </Link>
   );

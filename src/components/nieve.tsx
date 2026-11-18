@@ -1,4 +1,4 @@
-/** Nieve decorativa. Posiciones fijas para que servidor y cliente coincidan. */
+/** Nieve decorativa, discreta. Posiciones fijas para que SSR y cliente coincidan. */
 
 function prng(semilla: number) {
   let a = semilla;
@@ -13,13 +13,13 @@ function prng(semilla: number) {
 
 const random = prng(2512);
 
-const COPOS = Array.from({ length: 46 }, () => ({
+const COPOS = Array.from({ length: 28 }, () => ({
   izquierda: random() * 100,
-  tamano: 2 + random() * 4,
-  duracion: 9 + random() * 16,
-  retraso: -random() * 25,
+  tamano: 3 + random() * 4,
+  duracion: 14 + random() * 16,
+  retraso: -random() * 30,
   deriva: -40 + random() * 80,
-  opacidad: 0.25 + random() * 0.5,
+  opacidad: 0.2 + random() * 0.35,
 }));
 
 export function Nieve() {

@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 type Tono = "listo" | "espera" | "info" | "alerta";
 
 const tonos: Record<Tono, string> = {
-  listo: "border-pino-claro/60 bg-pino/30 text-[#8ff0b5]",
-  espera: "border-dorado/50 bg-dorado/15 text-dorado",
-  info: "border-hielo/40 bg-hielo/10 text-hielo",
-  alerta: "border-rojo/50 bg-rojo/15 text-[#ff9aa6]",
+  listo: "bg-verde-claro text-verde-oscuro",
+  espera: "bg-amarillo-claro text-tinta",
+  info: "bg-azul-claro text-azul-oscuro",
+  alerta: "bg-rojo-claro text-rojo-oscuro",
 };
 
 export function Insignia({
@@ -19,7 +19,7 @@ export function Insignia({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold",
+        "inline-flex items-center gap-1 rounded-full border-2 border-tinta px-2.5 py-0.5 text-xs font-extrabold",
         tonos[tono],
         className,
       )}

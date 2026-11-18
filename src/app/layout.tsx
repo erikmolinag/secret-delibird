@@ -36,15 +36,25 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Nieve />
         <Encabezado />
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">{children}</main>
-        <footer className="border-t border-noche-borde/60 px-4 py-6 text-center text-xs text-humo">
+
+        <footer className="mt-8 border-t-[3px] border-tinta bg-blanco px-4 py-5 text-center text-xs text-gris">
           Sprites de{" "}
           <a
             href="https://pokeapi.co"
-            className="text-hielo underline-offset-2 hover:underline"
+            className="font-bold text-azul underline-offset-2 hover:underline"
             target="_blank"
             rel="noreferrer"
           >
-            PokeAPI
+            PokéAPI
+          </a>{" "}
+          y{" "}
+          <a
+            href="https://play.pokemonshowdown.com"
+            className="font-bold text-azul underline-offset-2 hover:underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Pokémon Showdown
           </a>
           . Proyecto personal, sin afiliación con Nintendo, Creatures ni Game Freak.
         </footer>

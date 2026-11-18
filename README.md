@@ -8,7 +8,7 @@ con reglas de verdad.
 
 | Fase | Qué incluye | Estado |
 | --- | --- | --- |
-| 1 | Acceso por magic link, eventos, invitados, correos de invitación, listas de deseos con preview de links | ✅ listo |
+| 1 | Acceso por magic link, eventos, invitados, correos de invitación, listas de deseos con preview de links, avatar a elegir (entrenador o cualquier Pokémon) | ✅ listo |
 | 2 | Reglas del sorteo (exclusiones, listas blancas, pins), sorteo, correo de "ya te tocó", aviso de lista actualizada | ⏳ pendiente |
 | 3 | Tema a fondo, apartar regalos sin que el dueño lo vea, pulido | ⏳ pendiente |
 
@@ -22,7 +22,22 @@ existen en la base de datos.
 - **Postgres** con **Drizzle ORM** (local en Docker, en producción Neon)
 - **Magic links** propios (`jose` + tokens de un solo uso en la base)
 - **Resend** para el correo
-- **PokéAPI** para los sprites (sin API key, sin guardar imágenes)
+- **PokéAPI** para los sprites y la lista de la Pokédex (sin API key)
+- **Pokémon Showdown** para los sprites de entrenador
+
+## Diseño
+
+El tema es "papel de Pokémon con adornos navideños": fondo crema con textura de
+puntos, contornos gruesos de tinta azul marino (`--color-tinta`), sombras duras
+sin blur y los colores del logo (amarillo `#FFCB05`, azul `#2A75BB`) con el rojo
+de pokébola y un verde de pino.
+
+- Los colores y las sombras viven en el `@theme` de `src/app/globals.css`.
+- Ahí también están las utilidades propias: `franja-pokebola`, `raya-caramelo`
+  y `texto-logo` (relleno amarillo con contorno azul, como el logotipo).
+- Los adornos (pokébola, acebo, bastón, estrella) son SVG en
+  `src/components/adornos.tsx`, no imágenes.
+- Sin modo oscuro a propósito: un solo tema, claro.
 
 ## Arrancar en local
 

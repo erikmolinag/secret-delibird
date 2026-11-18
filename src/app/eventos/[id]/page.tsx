@@ -18,7 +18,7 @@ import {
   eliminarInvitadoAccion,
   enviarInvitacionesAccion,
 } from "@/actions/eventos";
-import { AvatarPokemon } from "@/components/avatar-pokemon";
+import { Avatar } from "@/components/avatar";
 import { Boton, BotonLink } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
@@ -70,22 +70,22 @@ export default async function PanelEvento({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold">{evento.name}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-humo">
+            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-gris">
               {evento.eventDate ? (
                 <span className="flex items-center gap-1.5">
-                  <CalendarDays className="size-4 text-hielo" />
+                  <CalendarDays className="size-4 text-azul" />
                   {formatearFecha(evento.eventDate)}
                 </span>
               ) : null}
               {evento.place ? (
                 <span className="flex items-center gap-1.5">
-                  <MapPin className="size-4 text-hielo" />
+                  <MapPin className="size-4 text-azul" />
                   {evento.place}
                 </span>
               ) : null}
               {presupuesto ? (
                 <span className="flex items-center gap-1.5">
-                  <Coins className="size-4 text-hielo" />
+                  <Coins className="size-4 text-azul" />
                   {presupuesto}
                 </span>
               ) : null}
@@ -113,12 +113,12 @@ export default async function PanelEvento({
           ].map((dato) => (
             <div
               key={dato.etiqueta}
-              className="rounded-2xl border border-noche-borde/70 bg-noche-suave/60 px-4 py-3"
+              className="rounded-2xl border-[3px] border-tinta bg-blanco px-4 py-3 shadow-dura-sm"
             >
-              <p className="font-display text-2xl font-extrabold text-dorado">
+              <p className="font-display text-2xl font-extrabold text-rojo">
                 {dato.valor}
               </p>
-              <p className="text-xs uppercase tracking-wide text-humo">
+              <p className="text-xs uppercase tracking-wide text-gris">
                 {dato.etiqueta}
               </p>
             </div>
@@ -139,28 +139,28 @@ export default async function PanelEvento({
               </BotonEnvio>
             </form>
           ) : (
-            <span className="text-sm text-humo">Todos tienen su invitación</span>
+            <span className="text-sm text-gris">Todos tienen su invitación</span>
           )}
         </TarjetaEncabezado>
 
-        <ul className="divide-y divide-noche-borde/60">
+        <ul className="divide-y-[3px] divide-tinta/15">
           {invitados.map((invitado) => (
             <li
               key={invitado.id}
               className="flex flex-wrap items-center gap-3 px-5 py-3"
             >
-              <AvatarPokemon pokemonId={invitado.pokemonId} tamano="sm" />
+              <Avatar persona={invitado} tamano="sm" />
 
               <div className="min-w-0 flex-1">
                 <p className="truncate font-bold">
                   {invitado.name}
                   {invitado.isOrganizer ? (
-                    <span className="ml-2 text-xs font-bold text-dorado">
+                    <span className="ml-2 text-xs font-bold text-rojo">
                       organiza
                     </span>
                   ) : null}
                 </p>
-                <p className="truncate text-xs text-humo">{invitado.email}</p>
+                <p className="truncate text-xs text-gris">{invitado.email}</p>
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5">
@@ -168,7 +168,7 @@ export default async function PanelEvento({
                   <Insignia tono="alerta">Fuera del sorteo</Insignia>
                 ) : null}
                 {invitado.wishlistUpdatedAt ? (
-                  <Insignia tono="listo">Lista lista</Insignia>
+                  <Insignia tono="listo">Lista armada</Insignia>
                 ) : null}
                 {invitado.joinedAt ? (
                   <Insignia tono="info">Ya entró</Insignia>
@@ -218,7 +218,7 @@ export default async function PanelEvento({
           ))}
         </ul>
 
-        <TarjetaCuerpo className="border-t border-noche-borde/60">
+        <TarjetaCuerpo className="border-t-[3px] border-tinta">
           <form action={agregarInvitadosAccion} className="space-y-3">
             <input type="hidden" name="eventId" value={evento.id} />
             <Campo
@@ -243,10 +243,10 @@ export default async function PanelEvento({
 
       <Tarjeta className="border-dashed">
         <TarjetaCuerpo className="flex flex-wrap items-center gap-4">
-          <Gift className="size-8 text-dorado" />
+          <Gift className="size-8 text-rojo" />
           <div className="min-w-0 flex-1">
             <TituloSeccion>Reglas y sorteo</TituloSeccion>
-            <p className="text-sm text-humo">
+            <p className="text-sm text-gris">
               Exclusiones, listas blancas, asignaciones fijas y el sorteo en si
               son la siguiente fase. La base de datos ya los guarda.
             </p>
@@ -255,13 +255,13 @@ export default async function PanelEvento({
         </TarjetaCuerpo>
       </Tarjeta>
 
-      <details className="group rounded-3xl border border-noche-borde/80 bg-noche-suave/60">
+      <details className="group rounded-3xl border-[3px] border-tinta bg-blanco shadow-dura">
         <summary className="flex cursor-pointer items-center gap-2 px-5 py-4 font-display font-bold">
-          <Settings2 className="size-5 text-hielo" />
+          <Settings2 className="size-5 text-azul" />
           Ajustes del evento
         </summary>
 
-        <div className="border-t border-noche-borde/60 px-5 py-5">
+        <div className="border-t-[3px] border-tinta px-5 py-5">
           <form action={actualizarEventoAccion} className="space-y-5">
             <input type="hidden" name="eventId" value={evento.id} />
 
@@ -326,8 +326,8 @@ export default async function PanelEvento({
               />
             </Campo>
 
-            <fieldset className="space-y-3 rounded-2xl border border-noche-borde/70 p-4">
-              <legend className="px-1 text-sm font-bold text-hielo">
+            <fieldset className="space-y-3 rounded-2xl border-[3px] border-tinta bg-crema p-4">
+              <legend className="px-1 text-sm font-bold text-azul">
                 Cómo quieres jugar
               </legend>
               <label className="flex items-start gap-3 text-sm">

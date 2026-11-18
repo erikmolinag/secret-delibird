@@ -1,16 +1,10 @@
-import {
-  CalendarDays,
-  Coins,
-  Gift,
-  ImageOff,
-  MapPin,
-  Trash2,
-} from "lucide-react";
+import { CalendarDays, Coins, Gift, ImageOff, MapPin, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { eliminarDeseoAccion } from "@/actions/wishlist";
-import { AvatarPokemon } from "@/components/avatar-pokemon";
+import { Acebo } from "@/components/adornos";
+import { SelectorAvatar } from "@/components/selector-avatar";
 import { FormularioDeseo } from "@/components/formulario-deseo";
 import { Boton } from "@/components/ui/boton";
 import { Insignia } from "@/components/ui/insignia";
@@ -22,12 +16,11 @@ import {
 } from "@/components/ui/tarjeta";
 import { requerirUsuario } from "@/lib/auth";
 import { listaDeDeseos, participanteDelUsuario } from "@/lib/datos";
-import { nombrePokemon } from "@/lib/pokemon";
 import { formatearFecha, formatearPresupuesto } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Mi lista de deseos" };
 
-/** Depende de la sesión: se renderiza por peticion. */
+/** Depende de la sesión: se renderiza por petición. */
 export const instant = false;
 
 const GANAS: Record<number, { texto: string; tono: "listo" | "info" | "espera" }> = {
@@ -54,57 +47,62 @@ export default async function MiEvento({
     evento.budgetCurrency,
   );
 
+  const datosEvento = [
+    evento.eventDate
+      ? { icono: CalendarDays, texto: formatearFecha(evento.eventDate)! }
+      : null,
+    evento.place ? { icono: MapPin, texto: evento.place } : null,
+    presupuesto ? { icono: Coins, texto: presupuesto } : null,
+  ].filter((d) => d !== null);
+
   return (
-    <div className="space-y-8">
-      <header className="flex flex-wrap items-center gap-5">
-        <AvatarPokemon pokemonId={participante.pokemonId} tamano="xl" />
-        <div>
-          <p className="text-sm font-bold uppercase tracking-wide text-hielo">
-            {evento.name}
-          </p>
-          <h1 className="text-3xl font-extrabold">Hola, {participante.name}</h1>
-          <p className="text-sm text-humo">
-            Tu Pokémon en este intercambio es{" "}
-            <strong className="text-nieve">
-              {nombrePokemon(participante.pokemonId)}
-            </strong>
-            .
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-humo">
-            {evento.eventDate ? (
-              <span className="flex items-center gap-1.5">
-                <CalendarDays className="size-4 text-hielo" />
-                {formatearFecha(evento.eventDate)}
+    <div className="space-y-6">
+      <header className="relative rounded-3xl border-[3px] border-tinta bg-blanco p-5 shadow-dura">
+        <Acebo className="absolute -right-3 -top-4 size-14 rotate-12" />
+
+        <p className="font-display text-sm font-extrabold uppercase tracking-wide text-azul-oscuro">
+          {evento.name}
+        </p>
+        <h1 className="text-3xl font-extrabold">Hola, {participante.name}</h1>
+
+        {datosEvento.length ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {datosEvento.map((dato) => (
+              <span
+                key={dato.texto}
+                className="inline-flex items-center gap-1.5 rounded-full border-2 border-tinta bg-crema-2 px-3 py-1 text-sm font-bold"
+              >
+                <dato.icono className="size-4 text-azul" />
+                {dato.texto}
               </span>
-            ) : null}
-            {evento.place ? (
-              <span className="flex items-center gap-1.5">
-                <MapPin className="size-4 text-hielo" />
-                {evento.place}
-              </span>
-            ) : null}
-            {presupuesto ? (
-              <span className="flex items-center gap-1.5">
-                <Coins className="size-4 text-hielo" />
-                {presupuesto}
-              </span>
-            ) : null}
+            ))}
           </div>
-        </div>
+        ) : null}
+
+        {evento.message ? (
+          <p className="mt-4 rounded-2xl border-2 border-tinta bg-amarillo-claro px-4 py-2.5 text-sm font-semibold">
+            {evento.message}
+          </p>
+        ) : null}
       </header>
 
-      {evento.message ? (
-        <p className="rounded-2xl border border-dorado/30 bg-dorado/10 px-5 py-3 text-sm">
-          {evento.message}
-        </p>
-      ) : null}
+      <Tarjeta>
+        <TarjetaEncabezado>
+          <TituloSeccion>Tu sprite</TituloSeccion>
+        </TarjetaEncabezado>
+        <TarjetaCuerpo>
+          <SelectorAvatar participantId={participante.id} persona={participante} />
+        </TarjetaCuerpo>
+      </Tarjeta>
 
-      <Tarjeta className="border-dashed">
+      <Tarjeta>
         <TarjetaCuerpo className="flex flex-wrap items-center gap-4">
-          <Gift className="size-8 text-dorado" />
+          <span className="grid size-12 place-items-center rounded-2xl border-[3px] border-tinta bg-rojo text-blanco shadow-dura-sm">
+            <Gift className="size-6" />
+          </span>
           <div className="min-w-0 flex-1">
             <TituloSeccion>A quién le regalas</TituloSeccion>
-            <p className="text-sm text-humo">
+            <p className="text-sm font-semibold text-gris">
               {evento.status === "drawn"
                 ? "El sorteo ya corrió. Aquí va a aparecer tu persona y su lista."
                 : "Delibird todavía no reparte los nombres. Mientras, arma tu lista para que no te regalen calcetines."}
@@ -119,13 +117,13 @@ export default async function MiEvento({
       <Tarjeta>
         <TarjetaEncabezado>
           <TituloSeccion>Mi lista de deseos</TituloSeccion>
-          <span className="text-sm text-humo">
+          <span className="text-sm font-bold text-gris">
             {deseos.length} cosa{deseos.length === 1 ? "" : "s"}
           </span>
         </TarjetaEncabezado>
 
         {deseos.length === 0 ? (
-          <TarjetaCuerpo className="text-sm text-humo">
+          <TarjetaCuerpo className="text-sm font-semibold text-gris">
             Todavía no pides nada. Pega un link abajo y aparece la foto.
           </TarjetaCuerpo>
         ) : (
@@ -135,7 +133,7 @@ export default async function MiEvento({
               return (
                 <li
                   key={deseo.id}
-                  className="flex gap-4 rounded-2xl border border-noche-borde/70 bg-noche/40 p-3"
+                  className="flex gap-4 rounded-2xl border-[3px] border-tinta bg-crema p-3"
                 >
                   {deseo.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -143,18 +141,20 @@ export default async function MiEvento({
                       src={deseo.imageUrl}
                       alt=""
                       loading="lazy"
-                      className="size-24 shrink-0 rounded-xl bg-white object-contain"
+                      className="size-24 shrink-0 rounded-xl border-2 border-tinta bg-blanco object-contain"
                       referrerPolicy="no-referrer"
                     />
                   ) : (
-                    <span className="grid size-24 shrink-0 place-items-center rounded-xl border border-noche-borde text-humo">
+                    <span className="grid size-24 shrink-0 place-items-center rounded-xl border-2 border-tinta bg-blanco text-gris">
                       <ImageOff className="size-6" />
                     </span>
                   )}
 
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-bold leading-tight">{deseo.title}</h3>
+                      <h3 className="font-display font-extrabold leading-tight">
+                        {deseo.title}
+                      </h3>
                       <form action={eliminarDeseoAccion}>
                         <input
                           type="hidden"
@@ -177,14 +177,14 @@ export default async function MiEvento({
                     <div className="flex flex-wrap items-center gap-2">
                       <Insignia tono={ganas.tono}>{ganas.texto}</Insignia>
                       {deseo.price ? (
-                        <span className="text-sm font-bold text-dorado">
+                        <span className="text-sm font-extrabold text-rojo">
                           {deseo.price}
                         </span>
                       ) : null}
                     </div>
 
                     {deseo.note ? (
-                      <p className="text-sm text-humo">{deseo.note}</p>
+                      <p className="text-sm font-semibold text-gris">{deseo.note}</p>
                     ) : null}
 
                     {deseo.url ? (
@@ -192,7 +192,7 @@ export default async function MiEvento({
                         href={deseo.url}
                         target="_blank"
                         rel="noreferrer nofollow"
-                        className="block truncate text-xs text-hielo underline underline-offset-2"
+                        className="block truncate text-xs font-bold text-azul underline underline-offset-2"
                       >
                         {deseo.siteName ?? deseo.url}
                       </a>
@@ -204,7 +204,7 @@ export default async function MiEvento({
           </ul>
         )}
 
-        <TarjetaCuerpo className="border-t border-noche-borde/60">
+        <TarjetaCuerpo className="border-t-[3px] border-tinta bg-crema">
           <FormularioDeseo participantId={participante.id} />
         </TarjetaCuerpo>
       </Tarjeta>

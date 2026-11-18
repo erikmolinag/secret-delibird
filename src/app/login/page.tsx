@@ -41,7 +41,7 @@ export default async function Entrar({
       </div>
 
       {error && MOTIVOS[error] ? (
-        <p className="rounded-2xl border border-dorado/40 bg-dorado/10 px-4 py-2.5 text-center text-sm text-dorado">
+        <p className="rounded-2xl border-[3px] border-tinta bg-amarillo-claro px-4 py-2.5 text-center text-sm text-rojo">
           {MOTIVOS[error]}
         </p>
       ) : null}

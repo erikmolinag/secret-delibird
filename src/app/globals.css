@@ -1,43 +1,55 @@
 @import "tailwindcss";
 
 @theme {
-  /* Noche navidena */
-  --color-noche: #071320;
-  --color-noche-suave: #0e2135;
-  --color-noche-borde: #1c3b56;
+  /* Tinta: el contorno oscuro de todo, como en el arte de Pokemon */
+  --color-tinta: #16304b;
 
-  /* Pino y rojo de temporada */
-  --color-pino: #0f5132;
-  --color-pino-claro: #1f7a4d;
-  --color-rojo: #e23a4e;
-  --color-rojo-oscuro: #b3122a;
+  /* Azul y amarillo del logo de Pokemon */
+  --color-azul: #2a75bb;
+  --color-azul-oscuro: #1a4e8a;
+  --color-azul-claro: #cfe6f9;
+  --color-amarillo: #ffcb05;
+  --color-amarillo-claro: #ffeeab;
 
-  /* Acentos */
-  --color-dorado: #f4c95d;
-  --color-hielo: #9fd8ef;
-  --color-nieve: #f4f9ff;
-  --color-humo: #a9bed2;
+  /* Rojo de pokebola */
+  --color-rojo: #ee1515;
+  --color-rojo-oscuro: #b81010;
+  --color-rojo-claro: #ffd9d9;
+
+  /* Verde de pino navideno */
+  --color-verde: #1f8a4c;
+  --color-verde-oscuro: #0e5e33;
+  --color-verde-claro: #cdeedb;
+
+  /* Papel */
+  --color-crema: #fff6e6;
+  --color-crema-2: #ffeccd;
+  --color-blanco: #ffffff;
+  --color-gris: #5b7390;
 
   --font-display: var(--font-baloo), ui-rounded, system-ui, sans-serif;
   --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-tarjeta: 0 18px 40px -24px rgba(0, 0, 0, 0.9);
-  --shadow-brillo: 0 0 0 1px rgba(159, 216, 239, 0.18);
+  /* Sombras duras, sin blur: se siente impreso, no "glow" */
+  --shadow-dura: 0 5px 0 0 var(--color-tinta);
+  --shadow-dura-sm: 0 3px 0 0 var(--color-tinta);
+  --shadow-papel: 0 2px 0 0 rgba(22, 48, 75, 0.18);
 }
 
 @layer base {
   html {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
-    background-color: var(--color-noche);
-    background-image:
-      radial-gradient(900px 500px at 15% -10%, rgba(31, 122, 77, 0.25), transparent 70%),
-      radial-gradient(800px 480px at 85% 0%, rgba(226, 58, 78, 0.18), transparent 70%),
-      radial-gradient(700px 700px at 50% 110%, rgba(159, 216, 239, 0.12), transparent 70%);
-    background-attachment: fixed;
-    color: var(--color-nieve);
+    background-color: var(--color-crema);
+    /* Textura de puntitos, como el fondo de una pantalla de Pokedex */
+    background-image: radial-gradient(
+      rgba(22, 48, 75, 0.07) 1.2px,
+      transparent 1.2px
+    );
+    background-size: 18px 18px;
+    color: var(--color-tinta);
     font-family: var(--font-sans);
   }
 
@@ -50,33 +62,56 @@
   }
 
   ::selection {
-    background: var(--color-dorado);
-    color: #1b2430;
+    background: var(--color-amarillo);
+    color: var(--color-tinta);
   }
 
   *:focus-visible {
-    outline: 2px solid var(--color-dorado);
+    outline: 3px solid var(--color-azul);
     outline-offset: 2px;
   }
 }
 
-/* Franja tipo pokebola para encabezados */
+/* Franja de pokebola: rojo arriba, linea negra, blanco abajo */
 @utility franja-pokebola {
   background: linear-gradient(
     to bottom,
-    var(--color-rojo) 0 48%,
-    #1b2430 48% 52%,
-    var(--color-nieve) 52% 100%
+    var(--color-rojo) 0 42%,
+    var(--color-tinta) 42% 58%,
+    var(--color-blanco) 58% 100%
   );
 }
 
-/* Nieve cayendo */
+/* Baston de caramelo para separar secciones */
+@utility raya-caramelo {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--color-rojo) 0 10px,
+    var(--color-blanco) 10px 20px
+  );
+}
+
+/* Titulo con relleno amarillo y contorno azul, como el logo */
+@utility texto-logo {
+  color: var(--color-amarillo);
+  -webkit-text-stroke: 3px var(--color-azul-oscuro);
+  paint-order: stroke fill;
+  text-shadow: 0 4px 0 var(--color-azul-oscuro);
+}
+
+@utility texto-logo-sm {
+  color: var(--color-amarillo);
+  -webkit-text-stroke: 2px var(--color-azul-oscuro);
+  paint-order: stroke fill;
+  text-shadow: 0 2px 0 var(--color-azul-oscuro);
+}
+
+/* Nieve: azulita para que se vea sobre el papel crema */
 .copo {
   position: absolute;
   top: -5vh;
   border-radius: 999px;
-  background: #ffffff;
-  filter: blur(0.3px);
+  background: #9fc8e8;
   animation-name: caer;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
@@ -88,10 +123,10 @@
     opacity: 0;
   }
   10% {
-    opacity: var(--copo-opacidad, 0.7);
+    opacity: var(--copo-opacidad, 0.45);
   }
   90% {
-    opacity: var(--copo-opacidad, 0.7);
+    opacity: var(--copo-opacidad, 0.45);
   }
   100% {
     transform: translate3d(var(--copo-deriva, 12px), 105vh, 0);
@@ -102,6 +137,6 @@
 @media (prefers-reduced-motion: reduce) {
   .copo {
     animation: none;
-    opacity: 0.25;
+    opacity: 0.2;
   }
 }
