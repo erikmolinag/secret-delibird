@@ -150,6 +150,18 @@ verificado. Para verificarlo, Resend te da tres registros de DNS (MX y SPF en el
 subdominio `send`, y el DKIM en `resend._domainkey`) que van en la misma zona
 donde apuntes el dominio a Vercel.
 
+Lo normal es verificar un subdominio (`email.tudominio.com`) y no el dominio
+pelón, para que un correo marcado como spam no arrastre la reputación del
+dominio principal. Si lo haces así, **`EMAIL_FROM` tiene que ser una dirección
+de ese subdominio** (`delibird@email.tudominio.com`); con el dominio raíz,
+Resend rechaza el envío.
+
+Para ver si los registros ya están publicados sin esperar a que Resend refresque:
+
+```bash
+node -e "const d=require('node:dns').promises;d.setServers(['1.1.1.1']);d.resolveTxt('resend._domainkey.email.tudominio.com').then(r=>console.log(r.flat().join('')))"
+```
+
 ### 3. Vercel (la app)
 
 Importa el repo, deja el preset de Next.js y pon las cinco variables en
