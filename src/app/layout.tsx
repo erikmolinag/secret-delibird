@@ -57,6 +57,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Pokémon Showdown
           </a>
           . Proyecto personal, sin afiliación con Nintendo, Creatures ni Game Freak.
+          <span className="mt-1.5 block">
+            Desarrollado por{" "}
+            <a
+              href="https://erikmolina.com"
+              target="_blank"
+              rel="noreferrer"
+              className="font-bold text-azul underline-offset-2 hover:underline"
+            >
+              erks
+            </a>
+          </span>
         </footer>
       </body>
     </html>
