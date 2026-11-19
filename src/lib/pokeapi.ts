@@ -66,3 +66,27 @@ export async function buscarPokemon(consulta: string, limite = 200) {
 
   return resultados.slice(0, limite);
 }
+
+/**
+ * El Pokemon que le toca de entrada a alguien en un evento: cualquiera de la
+ * Pokedex, evitando los que ya estan ocupados en ese intercambio. Si PokeAPI no
+ * contesta, caemos a la lista invernal, que vive en el codigo.
+ */
+export async function elegirPokemonParaEvento(ocupados: number[]) {
+  const todos = await listaPokemon();
+  const usados = new Set(ocupados);
+
+  if (!todos.length) {
+    const { POKEMON_INVERNALES } = await import("@/lib/pokemon");
+    const libre =
+      POKEMON_INVERNALES.find((p) => !usados.has(p.id)) ?? POKEMON_INVERNALES[0];
+    return { id: libre.id, nombre: libre.nombre };
+  }
+
+  for (let intento = 0; intento < 40; intento++) {
+    const elegido = todos[Math.floor(Math.random() * todos.length)];
+    if (elegido && !usados.has(elegido.id)) return elegido;
+  }
+
+  return todos.find((p) => !usados.has(p.id)) ?? todos[0];
+}

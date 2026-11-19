@@ -35,7 +35,7 @@ const CARACTERISTICAS = [
 const PASOS = [
   "Creas el evento con fecha, lugar y presupuesto.",
   "Agregas los correos de los invitados y les llega su invitación.",
-  "Cada quien elige su sprite y arma su lista de deseos.",
+  "Cada quien elige su Pokémon y arma su lista de deseos.",
   "Corres el sorteo y a cada uno le llega a quién le toca regalar.",
 ];
 
@@ -85,7 +85,7 @@ export default function Inicio() {
             </div>
             {/* px-8: deja libres las esquinas, donde cuelgan los adornos */}
             <p className="mt-3 px-8 text-center font-display text-lg font-extrabold">
-              Delibird reparte lo que le encargues
+              Delibird te ayudará a organizar tu intercambio secreto.
             </p>
           </div>
         </div>
@@ -102,7 +102,7 @@ export default function Inicio() {
                 src={spritePokemon(item.pokemon)}
                 alt=""
                 aria-hidden
-                className="absolute -right-2 -top-2 size-24 opacity-20 [image-rendering:pixelated]"
+                className="absolute -right-2 -top-2 size-24 [image-rendering:pixelated]"
               />
               <span
                 className={`grid size-12 place-items-center rounded-2xl border-[3px] border-tinta text-blanco shadow-dura-sm ${item.color}`}

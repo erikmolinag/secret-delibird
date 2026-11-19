@@ -15,7 +15,7 @@ import {
 } from "@/lib/datos";
 import { crearMagicLink } from "@/lib/magic-link";
 import { enviarCorreo, plantillaInvitacion } from "@/lib/mail";
-import { asignarPokemon } from "@/lib/pokemon";
+import { elegirPokemonParaEvento } from "@/lib/pokeapi";
 import {
   formatearFecha,
   formatearPresupuesto,
@@ -60,12 +60,15 @@ export async function crearEventoAccion(datos: FormData) {
     .returning();
 
   // El organizador queda dentro como invitado (puede dejar de jugar luego).
+  const suyo = await elegirPokemonParaEvento([]);
+
   await db.insert(schema.participants).values({
     eventId: evento.id,
     email: usuario.email,
     name: usuario.name ?? usuario.email,
     userId: usuario.id,
-    pokemonId: asignarPokemon(evento.id, []),
+    pokemonId: suyo.id,
+    avatarNombre: suyo.nombre,
     isOrganizer: true,
     isPlaying: evento.organizerPlays,
     joinedAt: new Date(),
@@ -146,16 +149,18 @@ export async function agregarInvitadosAccion(datos: FormData) {
   const cupo = Math.max(0, TOPE_INVITADOS - existentes.length);
   const ocupados = [...existentes];
 
-  const filas = nuevos.slice(0, cupo).map((invitado) => {
-    const pokemonId = asignarPokemon(eventId, ocupados);
-    ocupados.push(pokemonId);
-    return {
+  const filas = [];
+  for (const invitado of nuevos.slice(0, cupo)) {
+    const pokemon = await elegirPokemonParaEvento(ocupados);
+    ocupados.push(pokemon.id);
+    filas.push({
       eventId,
       email: invitado.email,
       name: invitado.name,
-      pokemonId,
-    };
-  });
+      pokemonId: pokemon.id,
+      avatarNombre: pokemon.nombre,
+    });
+  }
 
   if (filas.length) await db.insert(schema.participants).values(filas);
 

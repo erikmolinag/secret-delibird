@@ -565,7 +565,13 @@ export default async function PanelEvento({
                   defaultChecked={evento.avoidMutual}
                   className="mt-0.5 size-4 accent-[var(--color-rojo)]"
                 />
-                <span>Evitar parejas mutuas</span>
+                <span>
+                  Evitar que parejas se regalen
+                  <span className="block text-xs text-gris">
+                    Crear reglas para evitar que persona A le dé el regalo a
+                    persona B y viceversa.
+                  </span>
+                </span>
               </label>
             </fieldset>
 

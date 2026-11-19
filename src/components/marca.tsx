@@ -4,9 +4,9 @@ import { Pokebola } from "@/components/adornos";
 import { cn } from "@/lib/utils";
 
 /**
- * En el teléfono la marca se apila ("Secret" chiquito encima de "Delibird"),
- * que es como se acomodan los logotipos y así cabe completa sin encogerla.
- * De tablet para arriba va en una sola línea.
+ * En el teléfono la marca se apila ("Secret" encima de "Delibird") para que
+ * quepa completa sin encogerla. Los dos renglones van casi del mismo tamaño y
+ * pegados, que es lo que hace que se lea como un logotipo y no como dos palabras.
  */
 export function Marca({
   className,
@@ -34,8 +34,8 @@ export function Marca({
           className={cn(
             "font-display font-extrabold text-azul-oscuro",
             grande
-              ? "text-xl tracking-[0.2em] sm:text-4xl sm:tracking-normal"
-              : "text-sm tracking-[0.16em] sm:text-2xl sm:tracking-normal",
+              ? "text-2xl tracking-[0.12em] sm:text-4xl sm:tracking-normal"
+              : "text-base tracking-[0.1em] sm:text-2xl sm:tracking-normal",
           )}
         >
           Secret
@@ -43,7 +43,9 @@ export function Marca({
         <span
           className={cn(
             "font-display font-extrabold",
-            grande ? "texto-logo text-4xl" : "texto-logo-sm text-xl sm:text-2xl",
+            grande
+              ? "texto-logo text-4xl"
+              : "texto-logo-sm text-lg sm:mt-0 sm:text-2xl",
           )}
         >
           Delibird

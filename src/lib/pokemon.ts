@@ -65,45 +65,6 @@ export function nombrePokemon(id: number) {
   return POKEMON_INVERNALES.find((p) => p.id === id)?.nombre ?? `Pokémon #${id}`;
 }
 
-/** PRNG deterministico para que el mismo evento siempre reparta igual. */
-function mulberry32(semilla: number) {
-  let a = semilla;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hash(texto: string) {
-  let h = 2166136261;
-  for (let i = 0; i < texto.length; i++) {
-    h ^= texto.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-/**
- * Reparte un Pokémon distinto a cada invitado del evento, de forma estable:
- * mismo evento + mismos ocupados = mismo resultado.
- */
-export function asignarPokemon(eventId: string, ocupados: number[]) {
-  const random = mulberry32(hash(eventId));
-  const baraja = [...POKEMON_INVERNALES];
-  for (let i = baraja.length - 1; i > 0; i--) {
-    const j = Math.floor(random() * (i + 1));
-    [baraja[i], baraja[j]] = [baraja[j], baraja[i]];
-  }
-  const usados = new Set(ocupados);
-  const libre = baraja.find((p) => !usados.has(p.id));
-  // Si el evento tiene más invitados que Pokémon de la lista, reciclamos.
-  return (libre ?? baraja[ocupados.length % baraja.length]).id;
-}
-
-/** Rangos de la Pokedex por generacion, para navegarla sin perderse. */
 export const GENERACIONES = [
   { numero: 1, region: "Kanto", desde: 1, hasta: 151 },
   { numero: 2, region: "Johto", desde: 152, hasta: 251 },

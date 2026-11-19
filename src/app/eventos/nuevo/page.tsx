@@ -136,9 +136,10 @@ export default async function NuevoEvento() {
                   className="mt-0.5 size-4 accent-[var(--color-rojo)]"
                 />
                 <span>
-                  Evitar parejas mutuas
+                  Evitar que parejas se regalen
                   <span className="block text-xs text-gris">
-                    Que no pase que A le regale a B y B a A.
+                    Crear reglas para evitar que persona A le dé el regalo a
+                    persona B y viceversa.
                   </span>
                 </span>
               </label>
