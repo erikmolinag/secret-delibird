@@ -140,16 +140,23 @@ const CREMA = "#fff6e6";
 const GRIS = "#5b7390";
 const AZUL = "#2a75bb";
 
-/** Arte oficial de Delibird: se ve mejor que el sprite a tamaño grande. */
-const DELIBIRD =
-  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/225.png";
+/**
+ * El dibujo del encabezado. Se sirve desde el sitio y no desde GitHub, y con la
+ * dirección escrita completa a propósito: `urlBase()` apunta a localhost cuando
+ * el correo se arma desde la máquina, y la vista previa saldría sin imagen.
+ *
+ * El archivo ya viene recortado, puesto sobre el crema del encabezado (hay
+ * clientes que pintan de negro la transparencia) y al doble del tamaño en que
+ * se muestra, para que no se vea borroso en pantallas retina.
+ */
+const DELIBIRD = "https://delibird.app/delibird-correo.png";
 
 function cascaron(titulo: string, cuerpo: string) {
   return `<!doctype html>
 <html lang="es"><body style="margin:0;padding:24px 12px;background:${CREMA};font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:${TINTA}">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;margin:0 auto;background:#ffffff;border:3px solid ${TINTA};border-radius:20px;overflow:hidden">
     <tr><td align="center" style="background:${CREMA};padding:18px 20px 10px">
-      <img src="${DELIBIRD}" width="150" height="150" alt="Delibird" style="display:block;border:0">
+      <img src="${DELIBIRD}" width="166" height="150" alt="Delibird" style="display:block;border:0">
     </td></tr>
     <tr><td style="height:3px;background:${TINTA};font-size:0;line-height:0">&nbsp;</td></tr>
     <tr><td style="background:${TINTA};padding:14px 20px;font-size:19px;font-weight:800">
