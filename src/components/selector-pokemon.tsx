@@ -118,7 +118,9 @@ export function SelectorPokemon({
 
   function irAGeneracion(numero: number) {
     const destino = lista.current?.querySelector(`[data-generacion="${numero}"]`);
-    destino?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Sin "smooth": el salto es de miles de pixeles y el navegador a veces ni lo
+    // hace; de golpe siempre llega.
+    destino?.scrollIntoView({ block: "start" });
   }
 
   return (
