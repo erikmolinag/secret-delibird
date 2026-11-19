@@ -1,9 +1,9 @@
 "use client";
 
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
-import { cambiarPokemonAccion } from "@/actions/perfil";
+import { alternarShinyAccion, cambiarPokemonAccion } from "@/actions/perfil";
 import { Boton } from "@/components/ui/boton";
 import { Entrada } from "@/components/ui/campo";
 import { GENERACIONES, nombrePokemon, spritePokemon } from "@/lib/pokemon";
@@ -50,16 +50,24 @@ function Ficha({
   );
 }
 
+/** Toques seguidos al sprite para sacar el shiny, y cuanto se puede tardar. */
+const TOQUES = 5;
+const PAUSA_MS = 1200;
+
 export function SelectorPokemon({
   participantId,
   pokemonId,
   nombre,
+  shiny,
 }: {
   participantId: string;
   pokemonId: number;
   nombre: string | null;
+  shiny: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
+  const [brillante, setBrillante] = useState(shiny);
+  const toques = useRef({ cuenta: 0, ultimo: 0 });
   const [consulta, setConsulta] = useState("");
   const [resultados, setResultados] = useState<PokemonBasico[]>([]);
   const [buscando, setBuscando] = useState(false);
@@ -106,6 +114,10 @@ export function SelectorPokemon({
   }, [consulta, resultados]);
 
   function elegir(pokemon: PokemonBasico) {
+    // El shiny era de ese Pokemon: el nuevo entra con su color normal.
+    setBrillante(false);
+    toques.current = { cuenta: 0, ultimo: 0 };
+
     iniciarGuardado(async () => {
       await cambiarPokemonAccion({
         participantId,
@@ -113,6 +125,27 @@ export function SelectorPokemon({
         nombre: pokemon.nombre,
       });
       setAbierto(false);
+    });
+  }
+
+  /**
+   * Huevo de pascua: cinco toques seguidos al sprite y aparece el shiny. Si te
+   * tardas mas de un segundo entre toque y toque, la cuenta se reinicia, para
+   * que no salga sin querer a base de clics sueltos.
+   */
+  function tocarSprite() {
+    const ahora = Date.now();
+    const anterior = toques.current;
+    const cuenta = ahora - anterior.ultimo > PAUSA_MS ? 1 : anterior.cuenta + 1;
+    toques.current = { cuenta, ultimo: ahora };
+
+    if (cuenta < TOQUES) return;
+
+    toques.current = { cuenta: 0, ultimo: ahora };
+    const nuevo = !brillante;
+    setBrillante(nuevo);
+    iniciarGuardado(async () => {
+      await alternarShinyAccion({ participantId, shiny: nuevo });
     });
   }
 
@@ -126,19 +159,39 @@ export function SelectorPokemon({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-4">
-        <span className="grid size-40 shrink-0 place-items-center rounded-full border-[3px] border-tinta bg-crema-2 shadow-dura-sm sm:size-32">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={spritePokemon(pokemonId)}
-            alt={nombre ?? nombrePokemon(pokemonId)}
-            className="size-[88%] object-contain [image-rendering:pixelated]"
-            referrerPolicy="no-referrer"
-          />
+        <span className="relative inline-grid shrink-0">
+          <button
+            type="button"
+            onClick={tocarSprite}
+            aria-label={nombre ?? nombrePokemon(pokemonId)}
+            className="grid size-40 place-items-center rounded-full border-[3px] border-tinta bg-crema-2 shadow-dura-sm transition active:translate-y-[3px] active:shadow-none sm:size-32"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={spritePokemon(pokemonId, brillante)}
+              alt={nombre ?? nombrePokemon(pokemonId)}
+              className="size-[88%] object-contain [image-rendering:pixelated]"
+              referrerPolicy="no-referrer"
+            />
+          </button>
+
+          {brillante ? (
+            <Sparkles
+              aria-hidden
+              className="absolute right-1 top-1 size-7 fill-amarillo text-tinta sm:size-6"
+            />
+          ) : null}
         </span>
 
         <div>
-          <p className="font-display text-xl font-extrabold">
+          <p className="flex items-center gap-1.5 font-display text-xl font-extrabold">
             {nombre ?? nombrePokemon(pokemonId)}
+            {brillante ? (
+              <span className="inline-flex items-center gap-1 rounded-full border-2 border-tinta bg-amarillo px-2 py-0.5 text-xs font-extrabold text-tinta">
+                <Sparkles className="size-3" />
+                Shiny
+              </span>
+            ) : null}
           </p>
           <p className="mb-2 text-sm text-gris">
             Este Pokémon te acompaña en este intercambio. En otros

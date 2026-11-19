@@ -88,6 +88,8 @@ export const participants = pgTable(
     pokemonId: integer("pokemon_id").notNull(),
     /** Su nombre, para no tener que pedirlo a la Pokédex al pintarlo. */
     avatarNombre: text("avatar_nombre"),
+    /** El huevo de pascua: cinco toques al sprite y te quedas con el shiny. */
+    shiny: boolean("shiny").default(false).notNull(),
     isOrganizer: boolean("is_organizer").default(false).notNull(),
     /** Si queda fuera del sorteo pero sigue viendo el evento. */
     isPlaying: boolean("is_playing").default(true).notNull(),

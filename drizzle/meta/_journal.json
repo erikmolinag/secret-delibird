@@ -36,6 +36,13 @@
       "when": 1795042856979,
       "tag": "0004_fotos_de_regalos",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795060555792,
+      "tag": "0005_pokemon_shiny",
+      "breakpoints": true
     }
   ]
 }

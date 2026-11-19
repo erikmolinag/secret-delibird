@@ -210,6 +210,7 @@ export default async function MiEvento({
             participantId={participante.id}
             pokemonId={participante.pokemonId}
             nombre={participante.avatarNombre}
+            shiny={participante.shiny}
           />
         </TarjetaCuerpo>
       </Tarjeta>

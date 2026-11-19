@@ -51,9 +51,13 @@ export const DELIBIRD_ID = 225;
 
 const BASE = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon";
 
-/** Sprite pixelado de los juegos: ligero, ideal para avatares. */
-export function spritePokemon(id: number) {
-  return `${BASE}/${id}.png`;
+/**
+ * Sprite pixelado de los juegos: ligero, ideal para avatares. El shiny es el
+ * mismo Pokemon con la otra paleta; se consigue tocando cinco veces el sprite
+ * mientras lo eliges.
+ */
+export function spritePokemon(id: number, shiny = false) {
+  return shiny ? `${BASE}/shiny/${id}.png` : `${BASE}/${id}.png`;
 }
 
 /** Arte oficial: grande y limpio, para heroes y tarjetas. */

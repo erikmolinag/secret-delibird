@@ -80,7 +80,30 @@ export async function cambiarPokemonAccion(eleccion: {
 
   await db
     .update(schema.participants)
-    .set({ pokemonId: id, avatarNombre: eleccion.nombre.slice(0, 40) })
+    // El shiny se encontro para ESE Pokemon: al cambiar de Pokemon se pierde.
+    .set({ pokemonId: id, avatarNombre: eleccion.nombre.slice(0, 40), shiny: false })
+    .where(eq(schema.participants.id, eleccion.participantId));
+
+  refresh();
+  return { ok: true as const };
+}
+
+/**
+ * El huevo de pascua: cinco toques al sprite mientras lo eliges y te quedas con
+ * la version shiny, que ven todos en el evento. Otros cinco y vuelve a su color.
+ */
+export async function alternarShinyAccion(eleccion: {
+  participantId: string;
+  shiny: boolean;
+}) {
+  const usuario = await requerirUsuario();
+
+  const fila = await participanteDelUsuario(eleccion.participantId, usuario);
+  if (!fila) return { ok: false as const };
+
+  await db
+    .update(schema.participants)
+    .set({ shiny: eleccion.shiny })
     .where(eq(schema.participants.id, eleccion.participantId));
 
   refresh();

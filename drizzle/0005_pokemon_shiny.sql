@@ -1,0 +1,1 @@
+ALTER TABLE "participants" ADD COLUMN "shiny" boolean DEFAULT false NOT NULL;
