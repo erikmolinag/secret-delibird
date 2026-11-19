@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Baloo_2, Nunito } from "next/font/google";
-
 import { Encabezado } from "@/components/encabezado";
 import { Nieve } from "@/components/nieve";
 import { spritePokemon } from "@/lib/pokemon";
@@ -59,14 +58,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </a>
           . Proyecto personal, sin afiliación con Nintendo, Creatures ni Game Freak.
           <span className="mt-1.5 flex items-center justify-center gap-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={spritePokemon(94)}
-              alt=""
-              aria-hidden
-              className="size-7 object-contain [image-rendering:pixelated]"
-              referrerPolicy="no-referrer"
-            />
             Desarrollado por{" "}
             <a
               href="https://erikmolina.com"
@@ -76,6 +67,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             >
               erks
             </a>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={spritePokemon(94)}
+              alt=""
+              aria-hidden
+              className="size-7 object-contain [image-rendering:pixelated]"
+              referrerPolicy="no-referrer"
+            />
           </span>
         </footer>
       </body>

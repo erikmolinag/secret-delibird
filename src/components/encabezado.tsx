@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 
 import { FranjaPokebola } from "@/components/adornos";
+import { AyudaWhatsApp } from "@/components/ayuda-whatsapp";
 import { Marca } from "@/components/marca";
 import { BotonLink } from "@/components/ui/boton";
 import { usuarioActual } from "@/lib/auth";
@@ -44,6 +45,9 @@ async function NavUsuario() {
       <BotonLink href="/eventos" variante="fantasma" tamano="sm">
         Eventos
       </BotonLink>
+
+      {/* Flota abajo a la derecha; se pinta aquí nomás por la sesión. */}
+      <AyudaWhatsApp />
     </>
   );
 }

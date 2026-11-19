@@ -179,6 +179,8 @@ export function plantillaSorteo(opciones: {
   inicio: Date | null;
   lugar: string | null;
   lugarUrl: string | null;
+  /** Solo para quien nunca recibio invitacion: este es su primer correo. */
+  mensaje?: string | null;
 }) {
   const mapa = enlaceMapa(opciones.lugar, opciones.lugarUrl);
   const calendario = enlaceCalendario({
@@ -191,6 +193,7 @@ export function plantillaSorteo(opciones: {
   const html = cascaron(
     "Ya salió el sorteo",
     `<p>Delibird ya repartió los nombres de <strong>${opciones.evento}</strong>.</p>
+     ${opciones.mensaje ? `<p style="background:${AMARILLO_CLARO};border:2px solid ${TINTA};padding:12px 14px;border-radius:14px">${opciones.mensaje}</p>` : ""}
      <p>Entra para ver a quién te tocó regalarle y qué trae en su lista de deseos. No te decimos aquí quién es, por si alguien va leyendo sobre tu hombro.</p>
      ${opciones.fecha ? `<p><strong>El intercambio es:</strong> ${opciones.fecha}</p>` : ""}
      ${opciones.lugar ? `<p><strong>Dónde:</strong> ${mapa ? `<a href="${mapa}" style="color:${AZUL};font-weight:700">${opciones.lugar}</a>` : opciones.lugar}</p>` : ""}
@@ -202,7 +205,9 @@ export function plantillaSorteo(opciones: {
   );
 
   const text = `Ya salió el sorteo de "${opciones.evento}".
-
+${opciones.mensaje ? `
+${opciones.mensaje}
+` : ""}
 Entra para ver a quién te tocó regalarle:
 ${opciones.url}
 `;

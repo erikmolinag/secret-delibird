@@ -11,7 +11,7 @@ const CARACTERISTICAS = [
     color: "bg-rojo",
     titulo: "Sorteo con reglas",
     texto:
-      "Excluye parejas, limita a quién le puede tocar cada quien y fija los casos especiales. El sorteo respeta todo o te dice por qué no se puede.",
+      "Excluye parejas, limita a quién le puede tocar cada quien y fija los casos especiales.",
     pokemon: 215,
   },
   {
@@ -19,7 +19,7 @@ const CARACTERISTICAS = [
     color: "bg-verde",
     titulo: "Listas con foto",
     texto:
-      "Pega el link de lo que quieres y aparece la imagen del producto. Quien te regala ve exactamente qué pedir, sin adivinar.",
+      "Pega el link de lo que quieres y aparece la imagen del producto o sube la tuya. Quien te regala ve exactamente qué pedir, sin adivinar.",
     pokemon: 582,
   },
   {
@@ -35,8 +35,8 @@ const CARACTERISTICAS = [
 const PASOS = [
   "Creas el evento con fecha, lugar y presupuesto.",
   "Agregas los correos de los invitados y les llega su invitación.",
-  "Cada quien elige su Pokémon y arma su lista de deseos.",
   "Corres el sorteo y a cada uno le llega a quién le toca regalar.",
+  "Cada quien elige su Pokémon y arma su lista de deseos.",
 ];
 
 export default function Inicio() {

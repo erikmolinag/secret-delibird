@@ -148,10 +148,17 @@ export async function sortearAccion(datos: FormData) {
   });
 
   // Aviso a cada quien. El correo no dice a quién le tocó: hay que entrar.
+  //
+  // A quien nunca se le mandó invitación, este es su primer correo: le va
+  // también el recado de quien organiza, y lo damos por invitado para que el
+  // botón de invitar no le repita lo mismo. Así sortear basta, sin tener que
+  // acordarse de invitar antes.
   const porId = new Map(jugadores.map((j) => [j.id, j]));
   for (const pareja of resultado.parejas) {
     const quienDa = porId.get(pareja.giver);
     if (!quienDa) continue;
+
+    const primerCorreo = !quienDa.invitedAt;
 
     const url = await crearMagicLink(quienDa.email, `/e/${quienDa.id}`);
     const plantilla = plantillaSorteo({
@@ -162,9 +169,17 @@ export async function sortearAccion(datos: FormData) {
       lugar: evento.place,
       lugarUrl: evento.placeUrl,
       presupuesto: formatearPresupuesto(evento.budgetAmount, evento.budgetCurrency),
+      mensaje: primerCorreo ? evento.message : null,
     });
 
     await enviarCorreo({ to: quienDa.email, ...plantilla });
+
+    if (primerCorreo) {
+      await db
+        .update(schema.participants)
+        .set({ invitedAt: new Date() })
+        .where(eq(schema.participants.id, quienDa.id));
+    }
 
     await db
       .update(schema.assignments)

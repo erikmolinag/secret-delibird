@@ -17,6 +17,10 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [cargando, setCargando] = useState(false);
   const [intentado, setIntentado] = useState(false);
+  // Sube de uno en cada alta: le sirve de llave al campo de foto para que
+  // vuelva a nacer vacío. Si no, la miniatura del regalo anterior se quedaba
+  // pegada y se subía otra vez con el siguiente.
+  const [altas, setAltas] = useState(0);
 
   async function traerDatos() {
     const limpio = url.trim();
@@ -41,6 +45,7 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
         setUrl("");
         setPreview(null);
         setIntentado(false);
+        setAltas((n) => n + 1);
       }}
       className="space-y-5"
     >
@@ -150,7 +155,7 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
       </Campo>
 
       <Campo etiqueta="O sube una foto tuya">
-        <CampoFoto />
+        <CampoFoto key={`foto-${altas}`} />
       </Campo>
 
       <details className="rounded-2xl border-[3px] border-tinta px-4 py-3" open={sinImagen}>

@@ -236,8 +236,8 @@ export default async function MiEvento({
 
             {listaDeTuPersona.length === 0 ? (
               <p className="rounded-2xl border-2 border-tinta bg-amarillo-claro px-4 py-3 text-sm font-semibold">
-                Todavía no ha pedido nada. Si tarda, aquí te va a aparecer su
-                lista en cuanto la arme, y te avisamos por correo.
+                Este entrenador aún no tiene lista de deseos. Cuando la
+                actualice te enviaremos un correo.
               </p>
             ) : (
               <ul className="grid gap-3 sm:grid-cols-2">

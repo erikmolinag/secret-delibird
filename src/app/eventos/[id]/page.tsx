@@ -429,9 +429,9 @@ export default async function PanelEvento({
               </form>
 
               <p className="w-full text-xs font-semibold text-gris">
-                Deshacer se puede aunque ya hayas avisado: el correo no dice
-                quién te tocó, solo lleva aquí. Quien ya haya entrado, eso sí, ya
-                vio un nombre.
+                Es posible deshacer un sorteo aunque ya hayas avisado: el
+                correo no dice quién te tocó, solo lleva aquí. Solo que si
+                alguien ya entró a la página, ya pudo ver quién le tocó.
               </p>
             </div>
           ) : null}

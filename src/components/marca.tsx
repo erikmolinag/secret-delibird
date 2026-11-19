@@ -4,9 +4,8 @@ import { Pokebola } from "@/components/adornos";
 import { cn } from "@/lib/utils";
 
 /**
- * En el teléfono la marca se apila ("Secret" encima de "Delibird") para que
- * quepa completa sin encogerla. Los dos renglones van casi del mismo tamaño y
- * pegados, que es lo que hace que se lea como un logotipo y no como dos palabras.
+ * La marca va siempre en un renglón: apilada se leía como dos palabras sueltas
+ * y en el teléfono se perdía. En pantalla chica encoge, no se parte.
  */
 export function Marca({
   className,
@@ -20,22 +19,20 @@ export function Marca({
   return (
     <Link
       href="/"
-      className={cn("group inline-flex items-center gap-2 sm:gap-2.5", className)}
+      className={cn("group inline-flex items-center gap-1.5 sm:gap-2.5", className)}
     >
       <Pokebola
         className={cn(
           "shrink-0 drop-shadow-[0_3px_0_#16304b] transition group-hover:-rotate-12",
-          grande ? "size-16" : "size-12 sm:size-11",
+          grande ? "size-12 sm:size-16" : "size-9 sm:size-11",
         )}
       />
 
-      <span className="flex flex-col leading-none sm:flex-row sm:items-baseline sm:gap-1.5">
+      <span className="flex items-baseline gap-1.5 leading-none whitespace-nowrap">
         <span
           className={cn(
             "font-display font-extrabold text-azul-oscuro",
-            grande
-              ? "text-2xl tracking-[0.12em] sm:text-4xl sm:tracking-normal"
-              : "text-base tracking-[0.1em] sm:text-2xl sm:tracking-normal",
+            grande ? "text-2xl sm:text-4xl" : "text-lg sm:text-2xl",
           )}
         >
           Secret
@@ -43,9 +40,7 @@ export function Marca({
         <span
           className={cn(
             "font-display font-extrabold",
-            grande
-              ? "texto-logo text-4xl"
-              : "texto-logo-sm text-lg sm:mt-0 sm:text-2xl",
+            grande ? "texto-logo text-2xl sm:text-4xl" : "texto-logo-sm text-lg sm:text-2xl",
           )}
         >
           Delibird

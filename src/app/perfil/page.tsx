@@ -91,7 +91,7 @@ export default async function Perfil({
 
         {/* Pegado abajo: el selector de entrenador es largo y en el teléfono el
             botón se quedaba fuera de la pantalla. */}
-        <div className="sticky bottom-3 z-10 mt-5">
+        <div className="sticky bottom-3 z-10 mt-5 pe-16 md:pe-0">
           <BotonEnvio className="w-full" cargando="Guardando...">
             {bienvenida ? "Listo, vamos" : "Guardar perfil"}
           </BotonEnvio>

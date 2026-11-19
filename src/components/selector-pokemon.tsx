@@ -139,7 +139,8 @@ export function SelectorPokemon({
             {nombre ?? nombrePokemon(pokemonId)}
           </p>
           <p className="mb-2 text-sm text-gris">
-            Te acompaña solo en este intercambio. En otro puedes llevar otro.
+            Este Pokémon te acompaña en este intercambio. En otros
+            intercambios puedes elegir otro Pokémon.
           </p>
           <Boton
             type="button"
