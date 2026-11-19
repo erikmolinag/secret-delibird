@@ -142,35 +142,46 @@ el despliegue.
 En el plan gratis la base se duerme a los cinco minutos sin uso: la primera
 visita después de un rato tarda un segundo más.
 
-### 2. Resend (el correo)
+### 2. Plunk (el correo)
 
-Crea una API key con permiso solo de envío. Mientras no verifiques un dominio
-puedes usar `onboarding@resend.dev`, **pero Resend solo deja mandar a tu propio
-correo**: los invitados no van a recibir nada hasta que el dominio esté
-verificado. Para verificarlo, Resend te da tres registros de DNS (MX y SPF en el
-subdominio `send`, y el DKIM en `resend._domainkey`) que van en la misma zona
-donde apuntes el dominio a Vercel.
+El correo sale por [Plunk](https://useplunk.com). Se paga por correo mandado
+(unos 0.001 USD cada uno) y **no tiene tope diario**, que es justo lo que no
+servía del plan gratis de Resend: 100 al día se acaban en una sola tanda de
+invitaciones.
 
-Lo normal es verificar un subdominio (`email.tudominio.com`) y no el dominio
-pelón, para que un correo marcado como spam no arrastre la reputación del
-dominio principal. Si lo haces así, **`EMAIL_FROM` tiene que ser una dirección
-de ese subdominio** (`delibird@email.tudominio.com`); con el dominio raíz,
-Resend rechaza el envío.
+Lo que hay que hacer en su panel:
 
-Para ver si los registros ya están publicados sin esperar a que Resend refresque:
+1. Verificar el dominio desde donde van a salir los correos. Lo normal es
+   verificar un subdominio (`email.tudominio.com`) y no el dominio pelón, para
+   que un correo marcado como spam no arrastre la reputación del principal.
+   Entonces **`EMAIL_FROM` tiene que ser una dirección de ese subdominio**.
+2. Prender el plan de paga, o los correos salen con la marca de Plunk al pie.
+3. Crear una llave secreta (empieza con `sk_`) y ponerla en `PLUNK_API_KEY`.
+
+Ojo con la dirección de la API: la vieja (`api.useplunk.com`) ya contesta `410
+Gone`. La buena es `https://next-api.useplunk.com/v1/send`, que es la que trae
+el código por omisión; si algún día la vuelven a mover, se cambia con
+`PLUNK_API_URL` sin tocar el código ni volver a desplegar.
+
+**Para regresarse a Resend** basta con quitar `PLUNK_API_KEY` y dejar
+`RESEND_API_KEY` en Vercel: `src/lib/mail.ts` usa Plunk si hay llave de Plunk y
+si no cae a Resend. No hace falta redesplegar, nomás volver a correr el deploy
+para que tome las variables.
+
+Aunque ya no haya tope diario, la pantalla de entrada conserva sus topes
+(`src/lib/limite-acceso.ts`): un enlace por minuto y cinco por hora por correo
+(eso sale de `login_tokens`, que ya guarda un renglón por enlace) y diez por
+hora por IP. Ya no es por la cuota sino por la cuenta: cada enlace que alguien
+pide se paga, y sin topes cualquiera puede inflarla o llenarle el buzón a quien
+se le antoje. Si el proveedor falla (dominio, cuota, red) la pantalla lo dice,
+en vez de mandar a la gente a revisar un buzón donde no va a llegar nada.
+
+Para ver si los registros de DNS ya están publicados sin esperar a que el panel
+refresque:
 
 ```bash
-node -e "const d=require('node:dns').promises;d.setServers(['1.1.1.1']);d.resolveTxt('resend._domainkey.email.tudominio.com').then(r=>console.log(r.flat().join('')))"
+node -e "const d=require('node:dns').promises;d.setServers(['1.1.1.1']);d.resolveTxt('_dkim.email.tudominio.com').then(r=>console.log(r.flat().join('')))"
 ```
-
-El plan gratis son 3,000 correos al mes y **100 al día**, y cada enlace de
-acceso que alguien pide es uno de esos correos. Por eso la pantalla de entrada
-tiene topes (`src/lib/limite-acceso.ts`): un enlace por minuto y cinco por hora
-por correo (eso sale de `login_tokens`, que ya guarda un renglón por enlace) y
-diez por hora por IP. Lo de la IP vive en memoria, así que en Vercel cada
-instancia lleva su propia cuenta: frena al que insiste, pero el tope firme es el
-del correo. Si Resend falla (cuota, dominio, red) la pantalla lo dice, en vez de
-mandar a la gente a revisar un buzón donde no va a llegar nada.
 
 ### 3. Vercel (la app)
 
@@ -181,7 +192,7 @@ Production y Preview:
 | --- | --- |
 | `DATABASE_URL` | la cadena **pooled** de Neon |
 | `AUTH_SECRET` | `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
-| `RESEND_API_KEY` | la key `re_...` |
+| `PLUNK_API_KEY` | la llave secreta `sk_...` de Plunk |
 | `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>` |
 | `APP_URL` | `https://tudominio.com` |
 | `ADMIN_EMAILS` | tu correo, el mismo con el que entras |

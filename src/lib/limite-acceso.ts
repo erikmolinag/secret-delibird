@@ -7,9 +7,9 @@ import { db, schema } from "@/db";
 
 /**
  * Topes del formulario de acceso. Cada enlace que se pide es un correo que
- * sale, y en el plan gratis de Resend sólo caben 100 al día: sin estos topes
- * cualquiera puede vaciar la cuota del día (y de paso llenarle el buzón a quien
- * se le antoje) nomás tecleando correos en la pantalla de entrada.
+ * sale, y los correos se pagan: sin estos topes cualquiera puede inflar la
+ * cuenta (y de paso llenarle el buzón a quien se le antoje) nomás tecleando
+ * correos en la pantalla de entrada.
  *
  * El conteo por correo sale de `login_tokens`, que ya guarda un renglón por
  * enlace. El de IP vive en memoria a propósito: no queremos una tabla de IPs de

@@ -48,7 +48,7 @@ export async function solicitarAccesoAccion(
   const envio = await enviarCorreo({ to: email, ...plantilla });
 
   if (!envio.enviado && envio.motivo !== "sin-api-key") {
-    // Resend falló (cuota del día, dominio, red). Decirlo, en vez de mandar a
+    // El proveedor falló (dominio, cuota, red). Decirlo, en vez de mandar a
     // la gente a revisar un buzón donde no va a llegar nada.
     return {
       error: "No pudimos mandar el correo. Inténtalo otra vez en un momento.",

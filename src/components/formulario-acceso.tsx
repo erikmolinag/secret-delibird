@@ -25,7 +25,7 @@ export function FormularioAcceso({ redirectTo }: { redirectTo?: string }) {
         {estado.enlaceDev ? (
           <div className="rounded-2xl border-[3px] border-tinta bg-amarillo-claro p-4 text-left">
             <p className="mb-2 text-xs font-bold uppercase tracking-wide text-rojo">
-              Modo desarrollo: no hay RESEND_API_KEY
+              Modo desarrollo: no hay llave de correo
             </p>
             <a
               href={estado.enlaceDev}

@@ -5,35 +5,115 @@ import { Resend } from "resend";
 import { enlaceCalendario, enlaceMapa } from "./enlaces.ts";
 
 type Correo = { to: string; subject: string; html: string; text: string };
+type Resultado = { enviado: true } | { enviado: false; motivo: string };
 
 /**
- * Manda el correo con Resend. Si no hay RESEND_API_KEY (desarrollo),
- * lo escribe en la consola del servidor y avisa que no se envio.
+ * La API de Plunk. La v1 vieja (api.useplunk.com) contesta 410: se movieron a
+ * next-api. Con PLUNK_API_URL se puede apuntar a otro lado sin tocar código.
  */
-export async function enviarCorreo(correo: Correo) {
-  const key = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || "Secret Delibird <onboarding@resend.dev>";
+const PLUNK_URL =
+  process.env.PLUNK_API_URL || "https://next-api.useplunk.com/v1/send";
 
-  if (!key) {
-    console.log(
-      [
-        "",
-        "=== CORREO (modo desarrollo, sin RESEND_API_KEY) ===",
-        `Para:   ${correo.to}`,
-        `Asunto: ${correo.subject}`,
-        "",
-        correo.text,
-        "===",
-        "",
-      ].join("\n"),
-    );
-    return { enviado: false as const, motivo: "sin-api-key" as const };
+/** Cuánto esperamos a que conteste el proveedor antes de rendirnos. */
+const ESPERA_MS = 15_000;
+
+/** Parte "Secret Delibird <delibird@algo.com>" en nombre y dirección. */
+function partirRemitente(remitente: string) {
+  const con = remitente.match(/^(.*?)<([^>]+)>$/);
+  if (con) return { nombre: con[1].trim() || null, direccion: con[2].trim() };
+  return { nombre: null, direccion: remitente.trim() };
+}
+
+/**
+ * Manda el correo. Usa Plunk si hay PLUNK_API_KEY y si no cae a Resend: así se
+ * puede cambiar de proveedor —o regresarse— nomás moviendo variables en Vercel,
+ * sin volver a desplegar. Sin ninguna de las dos llaves, que es como corre en
+ * desarrollo, lo escribe en la consola y avisa que no se envió.
+ */
+export async function enviarCorreo(correo: Correo): Promise<Resultado> {
+  const plunk = process.env.PLUNK_API_KEY;
+  const resend = process.env.RESEND_API_KEY;
+  const remitente = process.env.EMAIL_FROM?.trim() || null;
+
+  if (!plunk && !resend) {
+    console.log(`
+=== CORREO (modo desarrollo, sin llave de correo) ===
+Para:   ${correo.to}
+Asunto: ${correo.subject}
+
+${correo.text}
+===
+`);
+    return { enviado: false, motivo: "sin-api-key" };
+  }
+
+  if (plunk) return conPlunk(plunk, remitente, correo);
+  return conResend(resend as string, remitente, correo);
+}
+
+async function conPlunk(
+  llave: string,
+  remitente: string | null,
+  correo: Correo,
+): Promise<Resultado> {
+  // Plunk manda un solo cuerpo (HTML): no tiene campo aparte para el texto.
+  const cuerpo: Record<string, unknown> = {
+    to: correo.to,
+    subject: correo.subject,
+    body: correo.html,
+    // Transaccional: esto no mete a nadie a las listas de marketing.
+    subscribed: false,
+  };
+
+  // Sin EMAIL_FROM, Plunk usa el remitente que tenga configurado el proyecto.
+  if (remitente) {
+    const { nombre, direccion } = partirRemitente(remitente);
+    cuerpo.from = direccion;
+    if (nombre) cuerpo.name = nombre;
   }
 
   try {
-    const resend = new Resend(key);
-    const { error } = await resend.emails.send({
-      from,
+    const respuesta = await fetch(PLUNK_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${llave}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(cuerpo),
+      signal: AbortSignal.timeout(ESPERA_MS),
+    });
+
+    if (respuesta.ok) return { enviado: true };
+
+    // Los errores vienen como { error: { message, code } }; si no, el texto.
+    const crudo = await respuesta.text();
+    let motivo = String(respuesta.status);
+    try {
+      const json = JSON.parse(crudo) as {
+        error?: { message?: string; code?: string };
+      };
+      motivo = json.error?.message ?? json.error?.code ?? motivo;
+    } catch {
+      motivo = crudo.slice(0, 200) || motivo;
+    }
+
+    console.error("Plunk fallo:", respuesta.status, motivo);
+    return { enviado: false, motivo };
+  } catch (e) {
+    console.error("Plunk fallo:", e);
+    return { enviado: false, motivo: "excepcion" };
+  }
+}
+
+async function conResend(
+  llave: string,
+  remitente: string | null,
+  correo: Correo,
+): Promise<Resultado> {
+  try {
+    const cliente = new Resend(llave);
+    const { error } = await cliente.emails.send({
+      from: remitente ?? "Secret Delibird <onboarding@resend.dev>",
       to: correo.to,
       subject: correo.subject,
       html: correo.html,
@@ -41,12 +121,12 @@ export async function enviarCorreo(correo: Correo) {
     });
     if (error) {
       console.error("Resend fallo:", error);
-      return { enviado: false as const, motivo: error.message };
+      return { enviado: false, motivo: error.message };
     }
-    return { enviado: true as const };
+    return { enviado: true };
   } catch (e) {
     console.error("Resend fallo:", e);
-    return { enviado: false as const, motivo: "excepcion" as const };
+    return { enviado: false, motivo: "excepcion" };
   }
 }
 
