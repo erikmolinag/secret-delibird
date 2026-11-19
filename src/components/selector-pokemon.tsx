@@ -194,8 +194,9 @@ export function SelectorPokemon({
             ) : null}
           </p>
           <p className="mb-2 text-sm text-gris">
-            Este Pokémon te acompaña en este intercambio. En otros
-            intercambios puedes elegir otro Pokémon.
+            Este Pokémon te acompaña en este intercambio, con un poco de
+            suerte podría ser shiny. En otros intercambios puedes elegir otro
+            Pokémon.
           </p>
           <Boton
             type="button"
