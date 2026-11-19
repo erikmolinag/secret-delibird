@@ -151,12 +151,23 @@ invitaciones.
 
 Lo que hay que hacer en su panel:
 
-1. Verificar el dominio desde donde van a salir los correos. Lo normal es
-   verificar un subdominio (`email.tudominio.com`) y no el dominio pelón, para
-   que un correo marcado como spam no arrastre la reputación del principal.
-   Entonces **`EMAIL_FROM` tiene que ser una dirección de ese subdominio**.
+1. Verificar el dominio desde donde van a salir los correos. Aquí se manda
+   desde el dominio pelón (`delibird@delibird.app`), así que los registros de
+   Plunk van en la raíz. La alternativa prudente es verificar un subdominio
+   (`email.tudominio.com`), para que un correo marcado como spam no arrastre la
+   reputación del dominio principal; si lo haces así, **`EMAIL_FROM` tiene que
+   ser una dirección de ese subdominio**.
 2. Prender el plan de paga, o los correos salen con la marca de Plunk al pie.
 3. Crear una llave secreta (empieza con `sk_`) y ponerla en `PLUNK_API_KEY`.
+
+Los registros de Resend viven bajo `email.delibird.app` (su SPF está en
+`send.email.delibird.app`), así que no chocan con los de la raíz: se pueden
+tener los dos proveedores verificados al mismo tiempo, que es lo que hace real
+el regreso a Resend.
+
+Una advertencia de la raíz: `delibird.app` no tiene MX, o sea que a nadie le
+llega lo que conteste a esa dirección. Si alguien le pica a "responder", su
+correo se pierde. Se arregla poniendo un MX o mandando un `reply` en el envío.
 
 Ojo con la dirección de la API: la vieja (`api.useplunk.com`) ya contesta `410
 Gone`. La buena es `https://next-api.useplunk.com/v1/send`, que es la que trae
@@ -180,7 +191,7 @@ Para ver si los registros de DNS ya están publicados sin esperar a que el panel
 refresque:
 
 ```bash
-node -e "const d=require('node:dns').promises;d.setServers(['1.1.1.1']);d.resolveTxt('_dkim.email.tudominio.com').then(r=>console.log(r.flat().join('')))"
+node -e "const d=require('node:dns').promises;d.setServers(['1.1.1.1']);d.resolveTxt('_dkim.tudominio.com').then(r=>console.log(r.flat().join('')))"
 ```
 
 ### 3. Vercel (la app)
