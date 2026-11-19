@@ -1,11 +1,16 @@
+import Image from "next/image";
 import Link from "next/link";
 
-import { Pokebola } from "@/components/adornos";
 import { cn } from "@/lib/utils";
 
 /**
  * La marca va siempre en un renglón: apilada se leía como dos palabras sueltas
  * y en el teléfono se perdía. En pantalla chica encoge, no se parte.
+ *
+ * El Delibird es más alto que ancho, así que se le manda la altura y el ancho
+ * sale solo; si se le pusiera `size-*` como a la pokébola, saldría aplastado.
+ * Y va sin la sombra dura: ya trae su propio contorno grueso, y la sombra le
+ * rellenaba los huecos entre las plumas hasta volverlo una mancha.
  */
 export function Marca({
   className,
@@ -21,10 +26,15 @@ export function Marca({
       href="/"
       className={cn("group inline-flex items-center gap-1.5 sm:gap-2.5", className)}
     >
-      <Pokebola
+      <Image
+        src="/delibird.png"
+        alt=""
+        width={189}
+        height={231}
+        priority
         className={cn(
-          "shrink-0 drop-shadow-[0_3px_0_#16304b] transition group-hover:-rotate-12",
-          grande ? "size-12 sm:size-16" : "size-9 sm:size-11",
+          "w-auto shrink-0 transition group-hover:-rotate-12",
+          grande ? "h-16 sm:h-20" : "h-12 sm:h-14",
         )}
       />
 
