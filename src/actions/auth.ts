@@ -4,6 +4,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { cerrarSesion } from "@/lib/auth";
+import {
+  anotarEnlacePorIp,
+  mensajeDeLimite,
+  revisarLimiteAcceso,
+} from "@/lib/limite-acceso";
 import { VIGENCIA_MINUTOS, crearMagicLink } from "@/lib/magic-link";
 import { enviarCorreo, plantillaMagicLink } from "@/lib/mail";
 import { normalizarEmail } from "@/lib/utils";
@@ -31,9 +36,24 @@ export async function solicitarAccesoAccion(
     return { error: "Ese correo no se ve bien. Revísalo e intenta otra vez." };
   }
 
+  const limite = await revisarLimiteAcceso(email);
+  if (!limite.permitido) {
+    return { error: mensajeDeLimite(limite) ?? undefined };
+  }
+
   const url = await crearMagicLink(email, redirectTo);
+  await anotarEnlacePorIp();
+
   const plantilla = plantillaMagicLink(url, VIGENCIA_MINUTOS);
   const envio = await enviarCorreo({ to: email, ...plantilla });
+
+  if (!envio.enviado && envio.motivo !== "sin-api-key") {
+    // Resend falló (cuota del día, dominio, red). Decirlo, en vez de mandar a
+    // la gente a revisar un buzón donde no va a llegar nada.
+    return {
+      error: "No pudimos mandar el correo. Inténtalo otra vez en un momento.",
+    };
+  }
 
   return {
     ok: true,

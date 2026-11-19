@@ -163,6 +163,15 @@ Para ver si los registros ya están publicados sin esperar a que Resend refresqu
 node -e "const d=require('node:dns').promises;d.setServers(['1.1.1.1']);d.resolveTxt('resend._domainkey.email.tudominio.com').then(r=>console.log(r.flat().join('')))"
 ```
 
+El plan gratis son 3,000 correos al mes y **100 al día**, y cada enlace de
+acceso que alguien pide es uno de esos correos. Por eso la pantalla de entrada
+tiene topes (`src/lib/limite-acceso.ts`): un enlace por minuto y cinco por hora
+por correo (eso sale de `login_tokens`, que ya guarda un renglón por enlace) y
+diez por hora por IP. Lo de la IP vive en memoria, así que en Vercel cada
+instancia lleva su propia cuenta: frena al que insiste, pero el tope firme es el
+del correo. Si Resend falla (cuota, dominio, red) la pantalla lo dice, en vez de
+mandar a la gente a revisar un buzón donde no va a llegar nada.
+
 ### 3. Vercel (la app)
 
 Importa el repo, deja el preset de Next.js y pon las seis variables en
