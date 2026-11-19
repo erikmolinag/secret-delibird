@@ -2,7 +2,10 @@ import { ChevronRight, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { editarUsuarioAccion } from "@/actions/admin";
 import { AvatarEntrenador } from "@/components/avatar";
+import { BotonEnvio } from "@/components/ui/boton-envio";
+import { Campo, Entrada, claseInput } from "@/components/ui/campo";
 import { Insignia } from "@/components/ui/insignia";
 import {
   Tarjeta,
@@ -11,6 +14,7 @@ import {
   TituloSeccion,
 } from "@/components/ui/tarjeta";
 import { requerirAdmin } from "@/lib/auth";
+import { GRUPOS_ENTRENADORES } from "@/lib/avatares";
 import {
   intercambiosParaAdmin,
   resumenAdmin,
@@ -167,6 +171,57 @@ export default async function Admin() {
                   <Insignia tono="listo">Juega en {usuario.participa}</Insignia>
                 ) : null}
               </div>
+
+              <details className="w-full rounded-2xl border-[3px] border-tinta bg-crema px-4 py-2.5">
+                <summary className="cursor-pointer text-sm font-bold text-azul">
+                  Editar nombre y entrenador
+                </summary>
+
+                <form action={editarUsuarioAccion} className="space-y-4 pt-4">
+                  <input type="hidden" name="userId" value={usuario.id} />
+
+                  <Campo
+                    etiqueta="Nombre de entrenador"
+                    htmlFor={`nombre-${usuario.id}`}
+                  >
+                    <Entrada
+                      id={`nombre-${usuario.id}`}
+                      name="name"
+                      defaultValue={usuario.name ?? ""}
+                      maxLength={60}
+                      placeholder="Sin nombre"
+                    />
+                  </Campo>
+
+                  <Campo
+                    etiqueta="Entrenador"
+                    htmlFor={`entrenador-${usuario.id}`}
+                    pista="Su Pokémon no se toca aquí: ese es de cada intercambio."
+                  >
+                    <select
+                      id={`entrenador-${usuario.id}`}
+                      name="trainerKey"
+                      defaultValue={usuario.trainerKey ?? ""}
+                      className={claseInput}
+                    >
+                      <option value="">Sin entrenador</option>
+                      {GRUPOS_ENTRENADORES.map((g) => (
+                        <optgroup key={g.grupo} label={g.grupo}>
+                          {g.entrenadores.map((e) => (
+                            <option key={e.clave} value={e.clave}>
+                              {e.nombre}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </Campo>
+
+                  <BotonEnvio tamano="sm" cargando="Guardando...">
+                    Guardar cambios
+                  </BotonEnvio>
+                </form>
+              </details>
             </li>
           ))}
         </ul>

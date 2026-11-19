@@ -166,7 +166,7 @@ export default async function MiEvento({
                 key={invitado.id}
                 className="flex flex-wrap items-center gap-3 px-4 py-3"
               >
-                <Avatar persona={invitado} tamano="sm" />
+                <Avatar persona={invitado} tamano="md" />
 
                 <div className="min-w-0 flex-1 basis-32">
                   <p className="truncate font-bold">

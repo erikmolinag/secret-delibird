@@ -204,7 +204,7 @@ export default async function PanelEvento({
               key={invitado.id}
               className="flex flex-wrap items-center gap-3 px-5 py-3"
             >
-              <Avatar persona={invitado} tamano="sm" />
+              <Avatar persona={invitado} tamano="md" />
 
               <div className="min-w-0 flex-1 basis-40">
                 <p className="truncate font-bold">
