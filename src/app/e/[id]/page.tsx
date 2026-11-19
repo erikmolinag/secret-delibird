@@ -2,6 +2,7 @@ import {
   CalendarDays,
   Check,
   Coins,
+  ExternalLink,
   Gift,
   ImageOff,
   MapPin,
@@ -24,6 +25,7 @@ import {
   TarjetaEncabezado,
   TituloSeccion,
 } from "@/components/ui/tarjeta";
+import { clasesBoton } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { requerirUsuario } from "@/lib/auth";
 import { enlaceCalendario, enlaceMapa } from "@/lib/enlaces";
@@ -283,42 +285,46 @@ export default async function MiEvento({
                             {deseo.note}
                           </p>
                         ) : null}
-                        {deseo.url ? (
-                          <a
-                            href={deseo.url}
-                            target="_blank"
-                            rel="noreferrer nofollow"
-                            className="block truncate text-xs font-bold text-azul underline underline-offset-2"
-                          >
-                            {deseo.siteName ?? deseo.url}
-                          </a>
-                        ) : null}
+                        <div className="flex flex-wrap items-center gap-2 pt-1.5">
+                          {deseo.url ? (
+                            <a
+                              href={deseo.url}
+                              target="_blank"
+                              rel="noreferrer nofollow"
+                              title={deseo.siteName ?? deseo.url}
+                              className={clasesBoton("azul", "sm")}
+                            >
+                              <ExternalLink className="size-3.5" />
+                              Ver artículo
+                            </a>
+                          ) : null}
 
-                        <form action={alternarCompradoAccion} className="pt-1">
-                          <input
-                            type="hidden"
-                            name="participantId"
-                            value={participante.id}
-                          />
-                          <input type="hidden" name="itemId" value={deseo.id} />
-                          <BotonEnvio
-                            variante={comprado ? "secundario" : "fantasma"}
-                            tamano="sm"
-                            cargando="..."
-                          >
-                            {comprado ? (
-                              <>
-                                <Check className="size-3.5" />
-                                Ya lo compré
-                              </>
-                            ) : (
-                              <>
-                                <ShoppingBag className="size-3.5" />
-                                Marcar comprado
-                              </>
-                            )}
-                          </BotonEnvio>
-                        </form>
+                          <form action={alternarCompradoAccion}>
+                            <input
+                              type="hidden"
+                              name="participantId"
+                              value={participante.id}
+                            />
+                            <input type="hidden" name="itemId" value={deseo.id} />
+                            <BotonEnvio
+                              variante={comprado ? "secundario" : "fantasma"}
+                              tamano="sm"
+                              cargando="..."
+                            >
+                              {comprado ? (
+                                <>
+                                  <Check className="size-3.5" />
+                                  Ya lo compré
+                                </>
+                              ) : (
+                                <>
+                                  <ShoppingBag className="size-3.5" />
+                                  Marcar comprado
+                                </>
+                              )}
+                            </BotonEnvio>
+                          </form>
+                        </div>
                       </div>
                     </li>
                   );
