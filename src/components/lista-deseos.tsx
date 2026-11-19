@@ -31,7 +31,7 @@ import { Boton } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
 import { Insignia } from "@/components/ui/insignia";
-import { precioVisible } from "@/lib/utils";
+import { cn, precioVisible } from "@/lib/utils";
 
 export type Deseo = {
   id: string;
@@ -133,6 +133,10 @@ function Tarjeta({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: deseo.id });
 
+  // Mientras editas, el asa de arrastrar estorba y la miniatura se come el
+  // ancho: en el telefono el formulario se quedaba en una tira de 200 px.
+  const [editando, setEditando] = useState(false);
+
   const ganas = GANAS[deseo.priority] ?? GANAS[2];
 
   return (
@@ -143,16 +147,18 @@ function Tarjeta({
         isDragging ? "z-10 opacity-80 shadow-dura" : ""
       }`}
     >
-      <button
-        type="button"
-        className="-ml-1 touch-none self-stretch rounded-xl px-1 text-gris transition hover:bg-amarillo-claro hover:text-tinta"
-        title="Arrastra para cambiarlo de lugar"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="size-5" />
-        <span className="sr-only">Mover</span>
-      </button>
+      {editando ? null : (
+        <button
+          type="button"
+          className="-ml-1 touch-none self-stretch rounded-xl px-1 text-gris transition hover:bg-amarillo-claro hover:text-tinta"
+          title="Arrastra para cambiarlo de lugar"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="size-5" />
+          <span className="sr-only">Mover</span>
+        </button>
+      )}
 
       {deseo.imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
@@ -160,11 +166,19 @@ function Tarjeta({
           src={deseo.imageUrl}
           alt=""
           loading="lazy"
-          className="size-24 shrink-0 rounded-xl border-2 border-tinta bg-blanco object-contain"
+          className={cn(
+            "size-24 shrink-0 rounded-xl border-2 border-tinta bg-blanco object-contain",
+            editando && "hidden sm:block",
+          )}
           referrerPolicy="no-referrer"
         />
       ) : (
-        <span className="grid size-24 shrink-0 place-items-center rounded-xl border-2 border-tinta bg-blanco text-gris">
+        <span
+          className={cn(
+            "grid size-24 shrink-0 place-items-center rounded-xl border-2 border-tinta bg-blanco text-gris",
+            editando && "hidden sm:grid",
+          )}
+        >
           <ImageOff className="size-6" />
         </span>
       )}
@@ -213,7 +227,7 @@ function Tarjeta({
           </a>
         ) : null}
 
-        <details className="pt-1">
+        <details className="pt-1" onToggle={(e) => setEditando(e.currentTarget.open)}>
           <summary className="inline-flex cursor-pointer items-center gap-1 text-xs font-bold text-azul">
             <Pencil className="size-3" />
             Editar

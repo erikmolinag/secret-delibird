@@ -9,14 +9,23 @@ import { Boton } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
 import type { Preview } from "@/lib/og";
+import { cn } from "@/lib/utils";
 
-const VACIO: Preview = { title: null, imageUrl: null, siteName: null, price: null };
+const VACIO: Preview = {
+  title: null,
+  imageUrl: null,
+  imagenes: [],
+  siteName: null,
+  price: null,
+};
 
 export function FormularioDeseo({ participantId }: { participantId: string }) {
   const [url, setUrl] = useState("");
   const [preview, setPreview] = useState<Preview | null>(null);
   const [cargando, setCargando] = useState(false);
   const [intentado, setIntentado] = useState(false);
+  /** null = la primera que trajo la pagina; "" = ninguna, a proposito. */
+  const [elegida, setElegida] = useState<string | null>(null);
   // Sube de uno en cada alta: le sirve de llave al campo de foto para que
   // vuelva a nacer vacío. Si no, la miniatura del regalo anterior se quedaba
   // pegada y se subía otra vez con el siguiente.
@@ -26,6 +35,7 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
     const limpio = url.trim();
     if (!limpio) return;
     setCargando(true);
+    setElegida(null);
     try {
       const resultado = await previsualizarLinkAccion(limpio);
       setPreview(resultado ?? VACIO);
@@ -35,7 +45,9 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
     }
   }
 
-  const sinImagen = intentado && !preview?.imageUrl;
+  const imagenes = preview?.imagenes ?? [];
+  const imagen = elegida ?? preview?.imageUrl ?? "";
+  const sinImagen = intentado && !imagen;
   const llave = preview?.title ?? (intentado ? "sin-datos" : "vacio");
 
   return (
@@ -45,13 +57,14 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
         setUrl("");
         setPreview(null);
         setIntentado(false);
+        setElegida(null);
         setAltas((n) => n + 1);
       }}
       className="space-y-5"
     >
       <input type="hidden" name="participantId" value={participantId} />
       <input type="hidden" name="siteName" value={preview?.siteName ?? ""} />
-      <input type="hidden" name="scrapedImageUrl" value={preview?.imageUrl ?? ""} />
+      <input type="hidden" name="scrapedImageUrl" value={imagen} />
 
       <Campo
         etiqueta="Link del regalo"
@@ -86,25 +99,72 @@ export function FormularioDeseo({ participantId }: { participantId: string }) {
       </Campo>
 
       {intentado ? (
-        <div className="flex items-center gap-4 rounded-2xl border-[3px] border-tinta bg-crema p-3">
-          {preview?.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={preview.imageUrl}
-              alt=""
-              className="size-20 shrink-0 rounded-xl bg-white object-contain"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <span className="grid size-20 shrink-0 place-items-center rounded-xl border-2 border-tinta bg-blanco text-gris">
-              <ImageOff className="size-6" />
-            </span>
-          )}
-          <p className="text-sm text-gris">
-            {preview?.imageUrl
-              ? `Imagen encontrada${preview.siteName ? ` en ${preview.siteName}` : ""}.`
-              : "Esa página no dejó leer su imagen. Pega abajo la dirección de una foto o sube el link de la imagen que quieras."}
-          </p>
+        <div className="space-y-3 rounded-2xl border-[3px] border-tinta bg-crema p-3">
+          <div className="flex items-center gap-4">
+            {imagen ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imagen}
+                alt=""
+                className="size-20 shrink-0 rounded-xl bg-white object-contain"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <span className="grid size-20 shrink-0 place-items-center rounded-xl border-2 border-tinta bg-blanco text-gris">
+                <ImageOff className="size-6" />
+              </span>
+            )}
+            <p className="text-sm text-gris">
+              {imagen
+                ? imagenes.length > 1
+                  ? `${imagenes.length} imágenes${preview?.siteName ? ` en ${preview.siteName}` : ""}. Si no es la que querías, escoge otra.`
+                  : `Imagen encontrada${preview?.siteName ? ` en ${preview.siteName}` : ""}.`
+                : "Esa página no dejó leer su imagen. Sube una foto o pega abajo la dirección de la que quieras."}
+            </p>
+          </div>
+
+          {/* Las tiendas casi nunca marcan cual es la foto del producto, asi
+              que mejor se las enseñamos todas y que cada quien escoja. */}
+          {imagenes.length > 1 ? (
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              {imagenes.map((candidata) => (
+                <button
+                  key={candidata}
+                  type="button"
+                  onClick={() => setElegida(candidata)}
+                  aria-pressed={imagen === candidata}
+                  title="Usar esta imagen"
+                  className={cn(
+                    "grid size-16 shrink-0 place-items-center rounded-xl border-[3px] bg-blanco p-0.5 transition",
+                    imagen === candidata
+                      ? "border-azul shadow-dura-sm"
+                      : "border-tinta/40 hover:border-tinta",
+                  )}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={candidata}
+                    alt=""
+                    loading="lazy"
+                    className="size-full object-contain"
+                    referrerPolicy="no-referrer"
+                  />
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => setElegida("")}
+                aria-pressed={imagen === ""}
+                className={cn(
+                  "grid size-16 shrink-0 place-items-center rounded-xl border-[3px] bg-blanco text-xs font-bold text-gris transition",
+                  imagen === "" ? "border-azul shadow-dura-sm" : "border-tinta/40 hover:border-tinta",
+                )}
+              >
+                Ninguna
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
