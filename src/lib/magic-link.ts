@@ -6,6 +6,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 
 import { db, schema } from "@/db";
 import type { User } from "@/db/schema";
+import { nombreDeInvitacion } from "@/lib/datos";
 import { nombreDesdeEmail } from "@/lib/utils";
 
 export const VIGENCIA_MINUTOS = 20;
@@ -73,9 +74,16 @@ export async function consumirMagicLink(token: string): Promise<Resultado> {
     .limit(1);
 
   if (!usuario) {
+    // Si lo invitaron, su nombre es el que escribió quien organiza al agregarlo;
+    // si llegó por su cuenta, lo sacamos del correo y luego lo cambia él.
+    const invitado = await nombreDeInvitacion(fila.email);
+
     [usuario] = await db
       .insert(schema.users)
-      .values({ email: fila.email, name: nombreDesdeEmail(fila.email) })
+      .values({
+        email: fila.email,
+        name: invitado ?? nombreDesdeEmail(fila.email),
+      })
       .returning();
   }
 

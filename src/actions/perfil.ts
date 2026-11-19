@@ -43,6 +43,27 @@ export async function actualizarPerfilAccion(datos: FormData) {
   refresh();
 }
 
+/**
+ * El entrenador se guarda en cuanto lo tocas, sin esperar al botón. En el
+ * teléfono el botón queda muy abajo del selector y la gente se iba creyendo que
+ * ya había quedado: el sprite se marcaba, pero nunca se guardaba nada.
+ */
+export async function cambiarEntrenadorAccion(clave: string) {
+  const usuario = await requerirUsuario();
+
+  const entrenador = ENTRENADORES.find((e) => e.clave === clave)?.clave;
+  if (!entrenador) return { ok: false as const };
+
+  await db
+    .update(schema.users)
+    .set({ trainerKey: entrenador })
+    .where(eq(schema.users.id, usuario.id));
+
+  // Sin refresh(): lo único que muestra el entrenador en esta página es el
+  // propio selector, y un re-render podría pisar el nombre que están tecleando.
+  return { ok: true as const };
+}
+
 /** El Pokémon sí es de cada evento: puedes llevar uno distinto a cada uno. */
 export async function cambiarPokemonAccion(eleccion: {
   participantId: string;

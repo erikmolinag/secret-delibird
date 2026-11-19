@@ -15,6 +15,7 @@ import {
   TituloSeccion,
 } from "@/components/ui/tarjeta";
 import { esAdmin, requerirUsuario } from "@/lib/auth";
+import { nombreDeInvitacion } from "@/lib/datos";
 
 export const metadata: Metadata = { title: "Mi perfil" };
 
@@ -30,6 +31,10 @@ export default async function Perfil({
   const usuario = await requerirUsuario();
 
   const bienvenida = !usuario.onboardedAt;
+
+  // Mientras no se ponga nombre de entrenador, el mejor valor por omisión es el
+  // nombre con el que la invitaron, no uno adivinado de su correo.
+  const sugerido = bienvenida ? await nombreDeInvitacion(usuario.email) : null;
   const destino = siguiente?.startsWith("/") ? siguiente : null;
 
   return (
@@ -72,7 +77,7 @@ export default async function Perfil({
               <Entrada
                 id="name"
                 name="name"
-                defaultValue={usuario.name ?? ""}
+                defaultValue={(bienvenida ? sugerido ?? usuario.name : usuario.name) ?? ""}
                 maxLength={60}
                 required
                 autoFocus={bienvenida}
@@ -81,12 +86,16 @@ export default async function Perfil({
             </Campo>
 
             <SelectorEntrenador inicial={usuario.trainerKey} />
-
-            <BotonEnvio cargando="Guardando...">
-              {bienvenida ? "Listo, vamos" : "Guardar perfil"}
-            </BotonEnvio>
           </TarjetaCuerpo>
         </Tarjeta>
+
+        {/* Pegado abajo: el selector de entrenador es largo y en el teléfono el
+            botón se quedaba fuera de la pantalla. */}
+        <div className="sticky bottom-3 z-10 mt-5">
+          <BotonEnvio className="w-full" cargando="Guardando...">
+            {bienvenida ? "Listo, vamos" : "Guardar perfil"}
+          </BotonEnvio>
+        </div>
       </form>
 
       {!bienvenida ? (

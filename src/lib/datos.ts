@@ -303,3 +303,20 @@ export async function cuantosYaCompraron(eventId: string) {
     .where(eq(schema.participants.eventId, eventId));
   return filas.length;
 }
+
+/**
+ * El nombre con el que alguien fue invitado: lo que escribió quien organiza al
+ * agregarlo. Sirve de valor por omisión cuando esa persona todavía no se pone
+ * nombre de entrenador, que es mejor que adivinarlo de su correo. Si está en
+ * varios eventos, gana el más reciente.
+ */
+export async function nombreDeInvitacion(email: string) {
+  const [fila] = await db
+    .select({ nombre: schema.participants.name })
+    .from(schema.participants)
+    .where(eq(schema.participants.email, email))
+    .orderBy(desc(schema.participants.createdAt))
+    .limit(1);
+
+  return fila?.nombre.trim() || null;
+}
