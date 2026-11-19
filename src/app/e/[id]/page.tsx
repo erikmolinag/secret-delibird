@@ -41,6 +41,7 @@ import {
   formatearFecha,
   formatearPresupuesto,
   nombreVisible,
+  precioVisible,
 } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Mi lista de deseos" };
@@ -276,7 +277,7 @@ export default async function MiEvento({
                           <Insignia tono={ganas.tono}>{ganas.texto}</Insignia>
                           {deseo.price ? (
                             <span className="text-sm font-extrabold text-rojo">
-                              {deseo.price}
+                              {precioVisible(deseo.price)}
                             </span>
                           ) : null}
                         </div>

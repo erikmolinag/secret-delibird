@@ -86,3 +86,15 @@ export function nombreVisible(persona: {
 }) {
   return persona.nombrePerfil?.trim() || persona.name;
 }
+
+/**
+ * El precio de un regalo lo escribe cada quien a mano ("450", "450 MXN",
+ * "$450"), así que al mostrarlo le ponemos el signo si no lo trae.
+ */
+export function precioVisible(precio: string | null | undefined) {
+  const limpio = precio?.trim();
+  if (!limpio) return null;
+  // Si ya trae signo, o empieza con un codigo tipo "MXN 300", se deja igual.
+  const yaTrae = /^([$€£]|[A-Za-z]{3}[^A-Za-z])/.test(limpio);
+  return yaTrae ? limpio : "$" + limpio;
+}

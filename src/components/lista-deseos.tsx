@@ -31,6 +31,7 @@ import { Boton } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
 import { Insignia } from "@/components/ui/insignia";
+import { precioVisible } from "@/lib/utils";
 
 export type Deseo = {
   id: string;
@@ -191,7 +192,9 @@ function Tarjeta({
         <div className="flex flex-wrap items-center gap-2">
           <Insignia tono={ganas.tono}>{ganas.texto}</Insignia>
           {deseo.price ? (
-            <span className="text-sm font-extrabold text-rojo">{deseo.price}</span>
+            <span className="text-sm font-extrabold text-rojo">
+              {precioVisible(deseo.price)}
+            </span>
           ) : null}
         </div>
 
