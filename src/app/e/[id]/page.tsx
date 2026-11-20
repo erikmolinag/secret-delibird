@@ -360,8 +360,8 @@ export default async function MiEvento({
                 Mándale una carta
               </h3>
               <p className="text-sm font-semibold text-gris">
-                Le llega sin tu nombre y un correo le avisa para que entre a
-                leerla. No te puede contestar: eso sería delatarte.
+                Las cartas que envíes son anónimas, tu amigo secreto podrá
+                leerlas pero no podrá contestarte.
               </p>
 
               <FormularioCarta
@@ -434,8 +434,7 @@ export default async function MiEvento({
           <TarjetaCuerpo className="space-y-3">
             {recibidas.length === 0 ? (
               <p className="text-sm font-semibold text-gris">
-                Aquí van a caer las cartas de quien te sacó a ti. No vas a saber
-                quién te escribe hasta el día del intercambio.
+                Aquí verás las cartas que tu amigo secreto te ha enviado.
               </p>
             ) : (
               <>

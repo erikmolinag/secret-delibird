@@ -69,7 +69,7 @@ function Hoja() {
         maxLength={LARGO_MAXIMO}
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
-        placeholder="Una pista de lo que le vas a regalar, un chiste, un ya casi..."
+        placeholder="Querido amigo secreto..."
         className="min-h-28"
       />
 
@@ -77,7 +77,7 @@ function Hoja() {
         <p className="text-xs text-gris">
           {restan < 200
             ? `Te quedan ${restan} caracteres.`
-            : "No le decimos quién eres. Si la firmas, te delatas tú solito."}
+            : "Recuerda no revelar tu identidad. La carta es anónima."}
         </p>
 
         <BotonEnvio tamano="sm" cargando="Volando...">
