@@ -43,6 +43,13 @@
       "when": 1795060555792,
       "tag": "0005_pokemon_shiny",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1795197772174,
+      "tag": "0006_cartas",
+      "breakpoints": true
     }
   ]
 }

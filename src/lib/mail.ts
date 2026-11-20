@@ -151,6 +151,21 @@ const AZUL = "#2a75bb";
  */
 const DELIBIRD = "https://delibird.app/delibird-correo.png";
 
+/**
+ * Todo lo que escribió una persona (nombre del evento, recado, lugar) pasa por
+ * aquí antes de entrar al HTML del correo. Sin esto, un evento llamado
+ * "Posada <b>" deja el correo chueco, y un nombre con comillas se sale del
+ * atributo href y puede meter cualquier cosa.
+ */
+function escapar(valor: string) {
+  return valor
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function cascaron(titulo: string, cuerpo: string) {
   return `<!doctype html>
 <html lang="es"><body style="margin:0;padding:24px 12px;background:${CREMA};font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:${TINTA}">
@@ -220,27 +235,30 @@ export function plantillaInvitacion(opciones: {
       .join("\n\n"),
   });
 
-  const lugarHtml = opciones.lugar
+  // Todo lo que escribió quien organiza entra escapado; las ligas también, que
+  // una comilla en el href se sale del atributo.
+  const lugar = opciones.lugar ? escapar(opciones.lugar) : null;
+  const lugarHtml = lugar
     ? mapa
-      ? `<a href="${mapa}" style="color:${AZUL};font-weight:700">${opciones.lugar}</a>`
-      : opciones.lugar
+      ? `<a href="${escapar(mapa)}" style="color:${AZUL};font-weight:700">${lugar}</a>`
+      : lugar
     : null;
 
   const datos = [
-    opciones.fecha ? `<li><strong>Cuándo:</strong> ${opciones.fecha}</li>` : "",
+    opciones.fecha ? `<li><strong>Cuándo:</strong> ${escapar(opciones.fecha)}</li>` : "",
     lugarHtml ? `<li><strong>Dónde:</strong> ${lugarHtml}</li>` : "",
     opciones.presupuesto
-      ? `<li><strong>Presupuesto sugerido:</strong> ${opciones.presupuesto}</li>`
+      ? `<li><strong>Presupuesto sugerido:</strong> ${escapar(opciones.presupuesto)}</li>`
       : "",
   ]
     .filter(Boolean)
     .join("");
 
   const html = cascaron(
-    `Te invitaron a ${opciones.evento}`,
-    `<p>${opciones.anfitrion} te invitó a su intercambio de regalos.</p>
+    `Te invitaron a ${escapar(opciones.evento)}`,
+    `<p>${escapar(opciones.anfitrion)} te invitó a su intercambio de regalos.</p>
      ${datos ? `<ul style="padding-left:18px;line-height:1.7">${datos}</ul>` : ""}
-     ${opciones.mensaje ? `<p style="background:${AMARILLO_CLARO};border:2px solid ${TINTA};padding:12px 14px;border-radius:14px">${opciones.mensaje}</p>` : ""}
+     ${opciones.mensaje ? `<p style="background:${AMARILLO_CLARO};border:2px solid ${TINTA};padding:12px 14px;border-radius:14px">${escapar(opciones.mensaje)}</p>` : ""}
      <p>Entra para armar tu lista de deseos: pega links de lo que te gustaría y quien te regale va a ver las fotos.</p>
      ${botones(
        boton(opciones.url, "Armar mi lista de deseos"),
@@ -279,12 +297,12 @@ export function plantillaSorteo(opciones: {
 
   const html = cascaron(
     "Ya salió el sorteo",
-    `<p>Delibird ya repartió los nombres de <strong>${opciones.evento}</strong>.</p>
-     ${opciones.mensaje ? `<p style="background:${AMARILLO_CLARO};border:2px solid ${TINTA};padding:12px 14px;border-radius:14px">${opciones.mensaje}</p>` : ""}
+    `<p>Delibird ya repartió los nombres de <strong>${escapar(opciones.evento)}</strong>.</p>
+     ${opciones.mensaje ? `<p style="background:${AMARILLO_CLARO};border:2px solid ${TINTA};padding:12px 14px;border-radius:14px">${escapar(opciones.mensaje)}</p>` : ""}
      <p>Entra para ver a quién te tocó regalarle y qué trae en su lista de deseos. No te decimos aquí quién es, por si alguien va leyendo sobre tu hombro.</p>
-     ${opciones.fecha ? `<p><strong>El intercambio es:</strong> ${opciones.fecha}</p>` : ""}
-     ${opciones.lugar ? `<p><strong>Dónde:</strong> ${mapa ? `<a href="${mapa}" style="color:${AZUL};font-weight:700">${opciones.lugar}</a>` : opciones.lugar}</p>` : ""}
-     ${opciones.presupuesto ? `<p><strong>Presupuesto sugerido:</strong> ${opciones.presupuesto}</p>` : ""}
+     ${opciones.fecha ? `<p><strong>El intercambio es:</strong> ${escapar(opciones.fecha)}</p>` : ""}
+     ${opciones.lugar ? `<p><strong>Dónde:</strong> ${mapa ? `<a href="${escapar(mapa)}" style="color:${AZUL};font-weight:700">${escapar(opciones.lugar)}</a>` : escapar(opciones.lugar)}</p>` : ""}
+     ${opciones.presupuesto ? `<p><strong>Presupuesto sugerido:</strong> ${escapar(opciones.presupuesto)}</p>` : ""}
      ${botones(
        boton(opciones.url, "Ver a quién me tocó"),
        calendario ? botonSuave(calendario, "Agregar al calendario") : "",
@@ -308,7 +326,7 @@ export function plantillaListaActualizada(opciones: {
 }) {
   const html = cascaron(
     "Tu persona movió su lista",
-    `<p>A quien le regalas en <strong>${opciones.evento}</strong> acaba de actualizar su lista de deseos.</p>
+    `<p>A quien le regalas en <strong>${escapar(opciones.evento)}</strong> acaba de actualizar su lista de deseos.</p>
      <p>Buen momento para echarle un ojo antes de comprar.</p>
      ${botones(boton(opciones.url, "Ver su lista"))}`,
   );
@@ -320,4 +338,29 @@ ${opciones.url}
 `;
 
   return { subject: `Actualizaron la lista en ${opciones.evento}`, html, text };
+}
+
+/**
+ * El aviso de que te llegó una carta. A propósito NO trae el texto: la idea es
+ * que entres a leerla, y así tampoco queda la carta dando vueltas en un buzón
+ * que puede andar abierto en cualquier pantalla. Tampoco dice de quién es.
+ */
+export function plantillaCarta(opciones: { evento: string; url: string }) {
+  const evento = escapar(opciones.evento);
+
+  const html = cascaron(
+    "Tienes una carta",
+    `<p>Alguien te escribió en <strong>${evento}</strong>.</p>
+     <p>No te decimos quién: es tu Santa secreto. Entra a leerla.</p>
+     ${botones(boton(opciones.url, "Leer mi carta"))}
+     <p style="font-size:12px;color:${GRIS}">No se puede contestar. Si quieres escribir tú, es a quien te tocó regalarle.</p>`,
+  );
+
+  const text = `Alguien te escribió una carta en "${opciones.evento}". No te decimos quién: es tu Santa secreto.
+
+Entra a leerla:
+${opciones.url}
+`;
+
+  return { subject: `Tienes una carta en ${opciones.evento}`, html, text };
 }

@@ -211,6 +211,40 @@ export const reservations = pgTable(
   (t) => [uniqueIndex("reservations_item_idx").on(t.itemId)],
 );
 
+/**
+ * Cartas para tu persona del intercambio. Van en un solo sentido: le escribes a
+ * quien te tocó regalarle y ya; quien la recibe no puede contestar, porque
+ * contestar sería decirle a su Santa secreto que sabe quién es.
+ *
+ * `fromParticipantId` se guarda para poder cobrar el límite de envíos, para que
+ * quien escribe vea lo que ya mandó y para que no se le pueda escribir a quien
+ * no te tocó. OJO: ese dato nunca debe llegar a la pantalla de quien recibe,
+ * que ahí la carta es anónima.
+ */
+export const letters = pgTable(
+  "letters",
+  {
+    id: uuid(),
+    eventId: text("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    fromParticipantId: text("from_participant_id")
+      .notNull()
+      .references(() => participants.id, { onDelete: "cascade" }),
+    toParticipantId: text("to_participant_id")
+      .notNull()
+      .references(() => participants.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    /** Cuándo la abrió quien la recibió. Quien escribe ve si ya la leyeron. */
+    readAt: timestamp("read_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("letters_to_idx").on(t.toParticipantId),
+    index("letters_from_idx").on(t.fromParticipantId),
+  ],
+);
+
 /** Bitacora del botón "revelar asignaciones". */
 export const revealLog = pgTable("reveal_log", {
   id: uuid(),
@@ -255,3 +289,4 @@ export type Event = typeof events.$inferSelect;
 export type Participant = typeof participants.$inferSelect;
 export type Rule = typeof rules.$inferSelect;
 export type WishlistItem = typeof wishlistItems.$inferSelect;
+export type Letter = typeof letters.$inferSelect;

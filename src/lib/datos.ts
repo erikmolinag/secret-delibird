@@ -320,3 +320,35 @@ export async function nombreDeInvitacion(email: string) {
 
   return fila?.nombre.trim() || null;
 }
+
+/**
+ * Las cartas que le llegaron a esta persona. Van sin quién las mandó, a
+ * propósito: en la pantalla de quien recibe son anónimas, y lo que no se
+ * consulta no se puede filtrar por accidente.
+ */
+export async function cartasRecibidas(participantId: string) {
+  return db
+    .select({
+      id: schema.letters.id,
+      body: schema.letters.body,
+      createdAt: schema.letters.createdAt,
+      readAt: schema.letters.readAt,
+    })
+    .from(schema.letters)
+    .where(eq(schema.letters.toParticipantId, participantId))
+    .orderBy(desc(schema.letters.createdAt));
+}
+
+/** Las que esta persona escribió, para que vea lo que ya mandó. */
+export async function cartasEnviadas(participantId: string) {
+  return db
+    .select({
+      id: schema.letters.id,
+      body: schema.letters.body,
+      createdAt: schema.letters.createdAt,
+      readAt: schema.letters.readAt,
+    })
+    .from(schema.letters)
+    .where(eq(schema.letters.fromParticipantId, participantId))
+    .orderBy(desc(schema.letters.createdAt));
+}

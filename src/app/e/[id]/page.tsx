@@ -5,7 +5,9 @@ import {
   ExternalLink,
   Gift,
   ImageOff,
+  Mailbox,
   MapPin,
+  PenLine,
   ShoppingBag,
   Users,
 } from "lucide-react";
@@ -15,6 +17,8 @@ import { notFound } from "next/navigation";
 import { alternarCompradoAccion } from "@/actions/regalos";
 import { Acebo } from "@/components/adornos";
 import { Avatar } from "@/components/avatar";
+import { FormularioCarta } from "@/components/formulario-carta";
+import { MarcarCartasLeidas } from "@/components/marcar-cartas-leidas";
 import { SelectorPokemon } from "@/components/selector-pokemon";
 import { FormularioDeseo } from "@/components/formulario-deseo";
 import { ListaDeseos } from "@/components/lista-deseos";
@@ -32,13 +36,17 @@ import { enlaceCalendario, enlaceMapa } from "@/lib/enlaces";
 import { nombrePokemon } from "@/lib/pokemon";
 import {
   aQuienLeRegala,
+  cartasEnviadas,
+  cartasRecibidas,
   comprasDe,
   invitadosDelEvento,
   listaDeDeseos,
   participanteDelUsuario,
 } from "@/lib/datos";
 import {
+  cn,
   formatearFecha,
+  formatearFechaCorta,
   formatearPresupuesto,
   nombreVisible,
   precioVisible,
@@ -75,6 +83,14 @@ export default async function MiEvento({
     ? await listaDeDeseos(asignado.receptor.id)
     : [];
   const yaCompre = asignado ? await comprasDe(participante.id) : new Set<string>();
+
+  const sorteado = evento.status === "drawn";
+  const recibidas = sorteado ? await cartasRecibidas(participante.id) : [];
+  const enviadas = asignado ? await cartasEnviadas(participante.id) : [];
+  const sinLeer = recibidas.filter((carta) => !carta.readAt).length;
+  // A quien se quedó fuera del sorteo nadie lo sacó, así que prometerle cartas
+  // que no van a llegar es de mal gusto. Si alguna le llegó, el buzón aparece.
+  const hayBuzon = sorteado && (participante.isPlaying || recibidas.length > 0);
   const presupuesto = formatearPresupuesto(
     evento.budgetAmount,
     evento.budgetCurrency,
@@ -333,6 +349,50 @@ export default async function MiEvento({
                 })}
               </ul>
             )}
+
+            {/*
+              Escribirle. Va dentro de esta tarjeta porque es sobre esta
+              persona, y así no hay forma de confundirse de destinatario.
+            */}
+            <div className="space-y-3 rounded-2xl border-[3px] border-tinta bg-crema p-4">
+              <h3 className="flex items-center gap-2 font-display font-extrabold">
+                <PenLine className="size-4 text-azul" />
+                Mándale una carta
+              </h3>
+              <p className="text-sm font-semibold text-gris">
+                Le llega sin tu nombre y un correo le avisa para que entre a
+                leerla. No te puede contestar: eso sería delatarte.
+              </p>
+
+              <FormularioCarta
+                participantId={participante.id}
+                paraQuien={nombreVisible(asignado.receptor)}
+              />
+
+              {enviadas.length ? (
+                <details className="pt-1">
+                  <summary className="cursor-pointer text-sm font-extrabold text-azul-oscuro">
+                    Lo que ya le escribiste ({enviadas.length})
+                  </summary>
+                  <ul className="mt-2 space-y-2">
+                    {enviadas.map((carta) => (
+                      <li
+                        key={carta.id}
+                        className="rounded-xl border-2 border-tinta bg-blanco px-3 py-2"
+                      >
+                        <p className="whitespace-pre-wrap text-sm font-semibold">
+                          {carta.body}
+                        </p>
+                        <p className="mt-1 text-xs text-gris">
+                          {formatearFechaCorta(carta.createdAt)} ·{" "}
+                          {carta.readAt ? "ya la leyó" : "sin abrir"}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+            </div>
           </TarjetaCuerpo>
         </Tarjeta>
       ) : (
@@ -355,6 +415,58 @@ export default async function MiEvento({
           </TarjetaCuerpo>
         </Tarjeta>
       )}
+
+      {hayBuzon ? (
+        <Tarjeta>
+          <TarjetaEncabezado>
+            <TituloSeccion>Tu buzón</TituloSeccion>
+            {sinLeer ? (
+              <Insignia tono="alerta">
+                {sinLeer} sin abrir
+              </Insignia>
+            ) : (
+              <span className="text-sm font-bold text-gris">
+                {recibidas.length} carta{recibidas.length === 1 ? "" : "s"}
+              </span>
+            )}
+          </TarjetaEncabezado>
+
+          <TarjetaCuerpo className="space-y-3">
+            {recibidas.length === 0 ? (
+              <p className="text-sm font-semibold text-gris">
+                Aquí van a caer las cartas de quien te sacó a ti. No vas a saber
+                quién te escribe hasta el día del intercambio.
+              </p>
+            ) : (
+              <>
+                {sinLeer ? (
+                  <MarcarCartasLeidas participantId={participante.id} />
+                ) : null}
+
+                <ul className="space-y-3">
+                  {recibidas.map((carta) => (
+                    <li
+                      key={carta.id}
+                      className={cn(
+                        "rounded-2xl border-[3px] border-tinta p-4",
+                        carta.readAt ? "bg-crema" : "bg-amarillo-claro",
+                      )}
+                    >
+                      <p className="whitespace-pre-wrap font-semibold leading-relaxed">
+                        {carta.body}
+                      </p>
+                      <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-gris">
+                        <Mailbox className="size-3.5" />
+                        De tu Santa secreto · {formatearFechaCorta(carta.createdAt)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </TarjetaCuerpo>
+        </Tarjeta>
+      ) : null}
 
       <Tarjeta>
         <TarjetaEncabezado>
