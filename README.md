@@ -11,6 +11,7 @@ con reglas de verdad.
 | 1 | Acceso por magic link, eventos, invitados, correos de invitación, listas de deseos con preview de links, avatar a elegir (entrenador o cualquier Pokémon) | ✅ listo |
 | 2 | Reglas del sorteo (exclusiones, listas blancas, asignaciones fijas), sorteo con diagnóstico, correos de "ya salió" y "movieron su lista", botón de revelar con bitácora | ✅ listo |
 | 3 | Marcar regalos comprados (invisible para el dueño), editar lo que ya pediste, sacar y meter gente al sorteo, páginas de 404, error y carga | ✅ listo |
+| 4 | Cartas de un solo sentido para tu persona del intercambio, con aviso por correo | ✅ listo |
 
 Los recordatorios por correo antes del evento quedaron fuera a propósito: de los
 cuatro avisos posibles elegiste tres, y ese no estaba. Si lo quieres después,
@@ -256,6 +257,16 @@ Detalles que no se ven pero importan:
   entrado no tiene entrenador, así que sale solo su Pokémon.
 - Los Pokémon se reparten de entrada sin repetir dentro del mismo evento, con un
   PRNG sembrado con el id del evento (mismo evento, mismo reparto).
+- Las **cartas** (`letters`) van en un solo sentido: le escribes a quien te
+  tocó y ya. Quien la recibe no puede contestar, porque contestar sería decirle
+  a su Santa secreto que ya sabe quién es, así que la carta le llega anónima.
+  El remitente sí se guarda —hace falta para cobrar el límite y para que quien
+  escribe vea lo que mandó— pero la consulta del buzón ni siquiera lo pide. El
+  destinatario tampoco viene del formulario: sale de la asignación, así que no
+  hay campo escondido que cambiar para escribirle a quien no te tocó. Límites:
+  una carta por minuto y ocho al día por persona, y el aviso por correo no sale
+  si ya tiene una sin abrir (ya le avisamos, y al entrar se las encuentra
+  todas). El correo no lleva el texto ni dice de quién es.
 - "Ya lo compré" vive en `reservations` y solo lo lee quien regala: la consulta
   de tu propia lista ni siquiera toca esa tabla, así que no hay forma de que se
   te escape por pantalla. Al volver a sortear se borran, porque eran del reparto
