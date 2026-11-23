@@ -14,6 +14,8 @@ import {
 import { alias } from "drizzle-orm/pg-core";
 
 import { db, schema } from "@/db";
+import { codigoAmazon } from "@/lib/ajustes";
+import { conReferidoDeAmazon } from "@/lib/amazon";
 import { nombreDesdeEmail } from "@/lib/utils";
 
 /** Eventos que organiza esta persona. */
@@ -183,13 +185,34 @@ export async function quienLeRegalaA(participantId: string) {
   return fila ?? null;
 }
 
+/**
+ * Los enlaces salen marcados con el código de afiliado de la casa (si hay uno
+ * puesto). Se hace al leer y no al guardar: así la dirección que pegó cada
+ * quien se conserva intacta, y si el código cambia, cambian todos los enlaces
+ * sin tener que tocar la base.
+ */
+function marcarEnlaces<T extends { url: string | null }>(
+  deseos: T[],
+  codigo: string | null,
+) {
+  if (!codigo) return deseos;
+  return deseos.map((deseo) =>
+    deseo.url ? { ...deseo, url: conReferidoDeAmazon(deseo.url, codigo) } : deseo,
+  );
+}
+
 export async function listaDeDeseos(participantId: string) {
-  return db
-    .select()
-    .from(schema.wishlistItems)
-    .where(eq(schema.wishlistItems.participantId, participantId))
-    // El orden lo manda quien arma la lista; la fecha solo desempata.
-    .orderBy(asc(schema.wishlistItems.position), asc(schema.wishlistItems.createdAt));
+  const [deseos, codigo] = await Promise.all([
+    db
+      .select()
+      .from(schema.wishlistItems)
+      .where(eq(schema.wishlistItems.participantId, participantId))
+      // El orden lo manda quien arma la lista; la fecha solo desempata.
+      .orderBy(asc(schema.wishlistItems.position), asc(schema.wishlistItems.createdAt)),
+    codigoAmazon(),
+  ]);
+
+  return marcarEnlaces(deseos, codigo);
 }
 
 /** Pokémon ya repartidos en el evento, para no repetir avatares. */
@@ -395,8 +418,10 @@ export async function listasDelEvento(eventId: string) {
     // El orden lo manda quien arma la lista; la fecha solo desempata.
     .orderBy(asc(schema.wishlistItems.position), asc(schema.wishlistItems.createdAt));
 
+  const codigo = await codigoAmazon();
+
   const porInvitado = new Map<string, DeseoPublico[]>();
-  for (const { participantId, ...deseo } of filas) {
+  for (const { participantId, ...deseo } of marcarEnlaces(filas, codigo)) {
     const lista = porInvitado.get(participantId);
     if (lista) lista.push(deseo);
     else porInvitado.set(participantId, [deseo]);

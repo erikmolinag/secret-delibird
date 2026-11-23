@@ -50,6 +50,13 @@
       "when": 1795197772174,
       "tag": "0006_cartas",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795474525243,
+      "tag": "0007_ajustes",
+      "breakpoints": true
     }
   ]
 }

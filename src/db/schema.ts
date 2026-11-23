@@ -245,6 +245,18 @@ export const letters = pgTable(
   ],
 );
 
+/**
+ * Ajustes del sitio: los que no son de nadie en particular y pone quien
+ * administra. Van en una tabla de clave y valor para no tener que migrar cada
+ * vez que aparezca uno nuevo. Hoy solo vive aquí el código de afiliado de
+ * Amazon ("amazon_tag").
+ */
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 /** Bitacora del botón "revelar asignaciones". */
 export const revealLog = pgTable("reveal_log", {
   id: uuid(),

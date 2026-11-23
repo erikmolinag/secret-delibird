@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 
 import { db, schema } from "@/db";
+import { CLAVE_AMAZON, guardarAjuste } from "@/lib/ajustes";
+import { codigoAmazonValido } from "@/lib/amazon";
 import { requerirAdmin } from "@/lib/auth";
 import { ENTRENADORES } from "@/lib/avatares";
 
@@ -37,4 +39,31 @@ export async function editarUsuarioAccion(datos: FormData) {
     .where(eq(schema.users.id, userId));
 
   refresh();
+}
+
+export type EstadoAjuste = { ok?: boolean; error?: string; guardados?: number };
+
+/**
+ * El código de afiliado de Amazon con el que se marcan los enlaces de las
+ * listas. Vacío lo apaga y los enlaces vuelven a salir como los pegó cada
+ * quien.
+ */
+export async function guardarCodigoAmazonAccion(
+  previo: EstadoAjuste,
+  datos: FormData,
+): Promise<EstadoAjuste> {
+  await requerirAdmin();
+
+  const valor = texto(datos, "codigo");
+  if (valor && !codigoAmazonValido(valor)) {
+    return {
+      error: "Un código de Amazon se ve así: midominio-20. Solo letras, números y guiones.",
+      guardados: previo.guardados,
+    };
+  }
+
+  await guardarAjuste(CLAVE_AMAZON, valor);
+  refresh();
+
+  return { ok: true, guardados: (previo.guardados ?? 0) + 1 };
 }

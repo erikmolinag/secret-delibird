@@ -169,6 +169,19 @@ consulta, pregúntate qué deja ver.
   privadas, revisando **cada salto** de redirección. Cualquier invitado puede
   pegar una URL y el servidor la visita: eso es SSRF si no se cuida.
 
+## Ajustes del sitio
+
+Lo que pone quien administra y vale para todo el sitio vive en la tabla
+`settings` (clave y valor) y se edita desde `/admin`. Hoy solo está el código
+de afiliado de Amazon (`amazon_tag`). Para agregar otro no hace falta migrar:
+se usa `leerAjuste` / `guardarAjuste` de `src/lib/ajustes.ts`.
+
+Los enlaces de Amazon se marcan **al leerlos** (en `listaDeDeseos` y
+`listasDelEvento`), no al guardarlos. Así la dirección que pegó cada quien se
+queda intacta y un cambio de código se nota en todos los enlaces de inmediato.
+`src/lib/amazon.ts` es puro —entra una cadena, sale otra— y tiene sus pruebas
+en `pruebas/amazon.test.ts`.
+
 ## El correo
 
 - `src/lib/mail.ts` manda por **Plunk** si hay `PLUNK_API_KEY`, y si no cae a

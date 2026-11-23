@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { editarUsuarioAccion } from "@/actions/admin";
+import { AjusteAmazon } from "@/components/ajuste-amazon";
 import { AvatarEntrenador } from "@/components/avatar";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Campo, Entrada, claseInput } from "@/components/ui/campo";
@@ -13,6 +14,7 @@ import {
   TarjetaEncabezado,
   TituloSeccion,
 } from "@/components/ui/tarjeta";
+import { codigoAmazon } from "@/lib/ajustes";
 import { requerirAdmin } from "@/lib/auth";
 import { GRUPOS_ENTRENADORES } from "@/lib/avatares";
 import {
@@ -33,10 +35,11 @@ export const instant = false;
 export default async function Admin() {
   await requerirAdmin();
 
-  const [resumen, intercambios, usuarios] = await Promise.all([
+  const [resumen, intercambios, usuarios, amazon] = await Promise.all([
     resumenAdmin(),
     intercambiosParaAdmin(),
     usuariosParaAdmin(),
+    codigoAmazon(),
   ]);
 
   const datos = [
@@ -94,6 +97,25 @@ export default async function Admin() {
           ))}
         </div>
       </header>
+
+      <Tarjeta>
+        <TarjetaEncabezado>
+          <TituloSeccion>Enlaces de Amazon</TituloSeccion>
+          <span className="text-sm text-gris">
+            {amazon ? "Prendido" : "Apagado"}
+          </span>
+        </TarjetaEncabezado>
+        <TarjetaCuerpo className="space-y-3">
+          <p className="text-sm text-gris">
+            Con un código puesto, todo enlace de Amazon que alguien pegue en su
+            lista se limpia —incluido el código de afiliado de quien lo haya
+            copiado— y sale con el tuyo. Las direcciones se guardan tal como las
+            pegaron: el código se pone al mostrarlas, así que cambiarlo aquí
+            cambia todos los enlaces de golpe.
+          </p>
+          <AjusteAmazon codigo={amazon} />
+        </TarjetaCuerpo>
+      </Tarjeta>
 
       <Tarjeta>
         <TarjetaEncabezado>
