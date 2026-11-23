@@ -4,6 +4,10 @@ Intercambio de regalos (amigo secreto) con temática Pokémon y navideña: event
 propios, invitados por correo, listas de deseos con foto y —en la fase 2— sorteo
 con reglas de verdad.
 
+Si vienes a programarlo (o eres un asistente), empieza por
+[CLAUDE.md](CLAUDE.md): ahí está cómo se trabaja aquí y las trampas que ya
+costaron tiempo.
+
 ## Estado
 
 | Fase | Qué incluye | Estado |
@@ -49,7 +53,8 @@ npm run mail:preview # escribe los 4 correos en public/correos/ para verlos
 - **Tailwind v4** — el tema vive en `src/app/globals.css`
 - **Postgres** con **Drizzle ORM** (local en Docker, en producción Neon)
 - **Magic links** propios (`jose` + tokens de un solo uso en la base)
-- **Resend** para el correo
+- **Plunk** para el correo, con **Resend** de respaldo (se cambia con una
+  variable de entorno, sin tocar código)
 - **PokéAPI** para los sprites y la lista de la Pokédex (sin API key)
 - **Pokémon Showdown** para los sprites de entrenador
 
@@ -78,8 +83,10 @@ npm run db:migrate          # crea las tablas desde drizzle/
 npm run dev                 # http://localhost:3000
 ```
 
-Sin `RESEND_API_KEY` no se manda ningún correo: el magic link se imprime en la
-consola del servidor y, en `npm run dev`, también aparece en pantalla.
+Sin `PLUNK_API_KEY` ni `RESEND_API_KEY` no se manda ningún correo: se imprime
+en la consola del servidor y, en `npm run dev`, el magic link también aparece en
+pantalla. En local se dejan vacías a propósito, para que una prueba no le llegue
+a un invitado de verdad.
 
 Para probar como en producción (los server actions se portan distinto):
 
@@ -112,12 +119,13 @@ Copia `.env.example` a `.env.local`:
 | --- | --- |
 | `DATABASE_URL` | Postgres. Local: `postgres://delibird:delibird@localhost:5433/secret_delibird` |
 | `AUTH_SECRET` | Firma la cookie de sesión. `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
-| `RESEND_API_KEY` | Vacío en local. En producción, la key de Resend |
+| `PLUNK_API_KEY` | Vacío en local. En producción, la llave `sk_...` de Plunk |
+| `RESEND_API_KEY` | Solo si te regresas a Resend: si hay llave de Plunk, gana Plunk |
 | `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>` |
 | `APP_URL` | La URL pública. Es la base de los magic links |
 | `ADMIN_EMAILS` | Correos (separados por coma) que pueden entrar a `/admin`. Vacía, nadie entra |
 
-## Desplegar (Vercel + Neon + Resend)
+## Desplegar (Vercel + Neon + Plunk)
 
 ### 1. Neon (la base)
 
@@ -220,20 +228,28 @@ magic links, así que si apunta al lugar equivocado los correos llevan a la nada
 Si se te olvida ponerla, la app usa el dominio que Vercel le asigna en lugar de
 `localhost`, pero es un parche, no el plan.
 
-Todo esto cabe en los planes gratis de Vercel, Neon y Resend para un evento
-familiar (Vercel Hobby es solo para uso no comercial). Lo único que cuesta es el
-dominio.
+Vercel y Neon caben en sus planes gratis para un evento familiar (Vercel Hobby
+es solo para uso no comercial). Lo que cuesta es el dominio y el correo: Plunk
+se paga por correo mandado, que fue el trato a cambio de quitarse el tope diario
+de Resend.
 
 ## Cómo está armado
 
 ```
 src/
-  actions/     server actions (auth, eventos, wishlist)
-  app/         rutas: landing, login, /eventos, /eventos/[id], /e/[id], /admin
+  actions/     server actions: auth, eventos, sorteo, wishlist, regalos,
+               perfil, cartas, admin
+  app/         landing, login, /perfil, /eventos, /eventos/[id] (organizador),
+               /e/[id] (lo que ve cada invitado), /admin
   components/  UI con tema propio (sin librería de componentes)
   db/          esquema de Drizzle y cliente
-  lib/         auth, magic links, correo, scraping de links, Pokémon, queries
+  lib/         auth, magic links, correo, scraping de links, sorteo, avatares,
+               Pokémon, consultas, límites
 ```
+
+Dos páginas distintas para el mismo evento: `/eventos/[id]` es la del
+organizador (invitados, reglas, sortear, revelar) y `/e/[id]` es la de cada
+invitado (su Pokémon, a quién le toca, su lista, su buzón).
 
 Detalles que no se ven pero importan:
 
