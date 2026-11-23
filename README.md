@@ -283,6 +283,9 @@ Detalles que no se ven pero importan:
   una carta por minuto y ocho al día por persona, y el aviso por correo no sale
   si ya tiene una sin abrir (ya le avisamos, y al entrar se las encuentra
   todas). El correo no lleva el texto ni dice de quién es.
+- **Las listas de deseos son públicas dentro del evento**: cualquiera las ve
+  desde la lista de invitados, y el panel de admin las ve todas. Lo que no sale
+  ahí es quién ya compró qué; eso sí es del sorteo.
 - "Ya lo compré" vive en `reservations` y solo lo lee quien regala: la consulta
   de tu propia lista ni siquiera toca esa tabla, así que no hay forma de que se
   te escape por pantalla. Al volver a sortear se borran, porque eran del reparto

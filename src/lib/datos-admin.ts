@@ -106,14 +106,3 @@ export async function intercambioParaAdmin(eventId: string) {
     .limit(1);
   return fila ?? null;
 }
-
-/** Cuántas cosas pidió cada invitado del evento. */
-export async function deseosPorInvitado(eventId: string) {
-  const filas = await db
-    .select({ participantId: wishlistItems.participantId, total: count() })
-    .from(wishlistItems)
-    .innerJoin(participants, eq(participants.id, wishlistItems.participantId))
-    .where(eq(participants.eventId, eventId))
-    .groupBy(wishlistItems.participantId);
-  return new Map(filas.map((f) => [f.participantId, f.total]));
-}

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Avatar } from "@/components/avatar";
+import { ListaPublica } from "@/components/lista-publica";
 import { BotonLink } from "@/components/ui/boton";
 import { Insignia } from "@/components/ui/insignia";
 import {
@@ -15,9 +16,10 @@ import { requerirAdmin } from "@/lib/auth";
 import {
   cuantosYaCompraron,
   invitadosDelEvento,
+  listasDelEvento,
   reglasDelEvento,
 } from "@/lib/datos";
-import { deseosPorInvitado, intercambioParaAdmin } from "@/lib/datos-admin";
+import { intercambioParaAdmin } from "@/lib/datos-admin";
 import {
   formatearFecha,
   formatearFechaCorta,
@@ -47,10 +49,12 @@ export default async function IntercambioAdmin({
   const { evento, organizador } = fila;
   const yaSorteado = evento.status === "drawn";
 
-  const [invitados, reglas, deseos, yaCompraron] = await Promise.all([
+  // Las listas completas, no nada más el conteo: desde aquí se puede ayudar a
+  // alguien que no sabe usar la página, o ver por qué una lista se ve rara.
+  const [invitados, reglas, listas, yaCompraron] = await Promise.all([
     invitadosDelEvento(id),
     reglasDelEvento(id),
-    deseosPorInvitado(id),
+    listasDelEvento(id),
     yaSorteado ? cuantosYaCompraron(id) : Promise.resolve(0),
   ]);
 
@@ -144,7 +148,8 @@ export default async function IntercambioAdmin({
 
         <ul className="divide-y-[3px] divide-tinta/15">
           {invitados.map((invitado) => {
-            const cuantos = deseos.get(invitado.id) ?? 0;
+            const lista = listas.get(invitado.id) ?? [];
+            const cuantos = lista.length;
 
             return (
               <li
@@ -182,6 +187,17 @@ export default async function IntercambioAdmin({
                     <Insignia tono="alerta">Sin invitar</Insignia>
                   )}
                 </div>
+
+                {cuantos ? (
+                  <details className="w-full">
+                    <summary className="cursor-pointer text-sm font-extrabold text-azul-oscuro">
+                      Ver su lista ({cuantos})
+                    </summary>
+                    <div className="pt-2">
+                      <ListaPublica deseos={lista} />
+                    </div>
+                  </details>
+                ) : null}
               </li>
             );
           })}

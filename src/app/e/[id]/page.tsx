@@ -18,6 +18,7 @@ import { alternarCompradoAccion } from "@/actions/regalos";
 import { Acebo } from "@/components/adornos";
 import { Avatar } from "@/components/avatar";
 import { FormularioCarta } from "@/components/formulario-carta";
+import { ListaPublica } from "@/components/lista-publica";
 import { MarcarCartasLeidas } from "@/components/marcar-cartas-leidas";
 import { SelectorPokemon } from "@/components/selector-pokemon";
 import { FormularioDeseo } from "@/components/formulario-deseo";
@@ -41,6 +42,7 @@ import {
   comprasDe,
   invitadosDelEvento,
   listaDeDeseos,
+  listasDelEvento,
   participanteDelUsuario,
 } from "@/lib/datos";
 import {
@@ -77,6 +79,7 @@ export default async function MiEvento({
   const { participante, evento } = fila;
   const deseos = await listaDeDeseos(participante.id);
   const invitados = await invitadosDelEvento(evento.id);
+  const listas = await listasDelEvento(evento.id);
 
   const asignado = evento.status === "drawn" ? await aQuienLeRegala(participante.id) : null;
   const listaDeTuPersona = asignado
@@ -177,7 +180,11 @@ export default async function MiEvento({
           </summary>
 
           <ul className="mt-3 divide-y-[3px] divide-tinta/15 overflow-hidden rounded-2xl border-[3px] border-tinta bg-blanco">
-            {invitados.map((invitado) => (
+            {invitados.map((invitado) => {
+              const lista = listas.get(invitado.id) ?? [];
+              const soyYo = invitado.id === participante.id;
+
+              return (
               <li
                 key={invitado.id}
                 className="flex flex-wrap items-center gap-3 px-4 py-3"
@@ -205,14 +212,37 @@ export default async function MiEvento({
                   {!invitado.isPlaying ? (
                     <Insignia tono="alerta">Fuera del sorteo</Insignia>
                   ) : null}
-                  {invitado.wishlistUpdatedAt ? (
+                  {/*
+                    La insignia sale de lo que hay en la lista y no de
+                    wishlistUpdatedAt: si alguien arma su lista y luego borra
+                    todo, esa fecha se queda puesta y la insignia prometía una
+                    lista que al abrirla no estaba.
+                  */}
+                  {lista.length ? (
                     <Insignia tono="listo">Lista armada</Insignia>
                   ) : (
                     <Insignia tono="espera">Sin lista</Insignia>
                   )}
                 </div>
+
+                {/*
+                  La lista de cada quien está a la vista de todos: así nadie
+                  tiene que preguntar qué le gusta a quién. Lo que no sale es
+                  quién ya compró qué, que eso sí es del sorteo.
+                */}
+                {lista.length ? (
+                  <details className="w-full">
+                    <summary className="cursor-pointer text-sm font-extrabold text-azul-oscuro">
+                      {soyYo ? "Ver mi lista" : "Ver su lista"} ({lista.length})
+                    </summary>
+                    <div className="pt-2">
+                      <ListaPublica deseos={lista} />
+                    </div>
+                  </details>
+                ) : null}
               </li>
-            ))}
+              );
+            })}
           </ul>
         </details>
       </header>

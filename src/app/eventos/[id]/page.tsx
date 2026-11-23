@@ -30,6 +30,7 @@ import {
   sortearAccion,
 } from "@/actions/sorteo";
 import { Avatar } from "@/components/avatar";
+import { ListaPublica } from "@/components/lista-publica";
 import { Boton, BotonLink } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { AreaTexto, Campo, Entrada, claseInput } from "@/components/ui/campo";
@@ -46,6 +47,7 @@ import {
   cuantosYaCompraron,
   eventoDelOrganizador,
   invitadosDelEvento,
+  listasDelEvento,
   reglasDelEvento,
 } from "@/lib/datos";
 import { enlaceMapa } from "@/lib/enlaces";
@@ -77,6 +79,7 @@ export default async function PanelEvento({
   if (!evento) notFound();
 
   const invitados = await invitadosDelEvento(id);
+  const listas = await listasDelEvento(id);
   const yo = invitados.find((p) => p.isOrganizer);
   const porInvitar = invitados.filter(
     (p) => !p.invitedAt && p.email !== usuario.email,
@@ -199,7 +202,10 @@ export default async function PanelEvento({
         </TarjetaEncabezado>
 
         <ul className="divide-y-[3px] divide-tinta/15">
-          {invitados.map((invitado) => (
+          {invitados.map((invitado) => {
+            const lista = listas.get(invitado.id) ?? [];
+
+            return (
             <li
               key={invitado.id}
               className="flex flex-wrap items-center gap-3 px-5 py-3"
@@ -222,7 +228,8 @@ export default async function PanelEvento({
                 {!invitado.isPlaying ? (
                   <Insignia tono="alerta">Fuera del sorteo</Insignia>
                 ) : null}
-                {invitado.wishlistUpdatedAt ? (
+                {/* De lo que hay en la lista, no de la fecha: ver /e/[id]. */}
+                {lista.length ? (
                   <Insignia tono="listo">Lista armada</Insignia>
                 ) : null}
                 {invitado.joinedAt ? (
@@ -294,8 +301,21 @@ export default async function PanelEvento({
                   ) : null}
                 </div>
               ) : null}
+
+              {/* La lista de cada quien, a la vista. Sin quién ya compró qué. */}
+              {lista.length ? (
+                <details className="w-full">
+                  <summary className="cursor-pointer text-sm font-extrabold text-azul-oscuro">
+                    Ver su lista ({lista.length})
+                  </summary>
+                  <div className="pt-2">
+                    <ListaPublica deseos={lista} />
+                  </div>
+                </details>
+              ) : null}
             </li>
-          ))}
+            );
+          })}
         </ul>
 
         <TarjetaCuerpo className="border-t-[3px] border-tinta">

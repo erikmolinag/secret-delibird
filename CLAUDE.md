@@ -154,7 +154,10 @@ consulta, pregúntate qué deja ver.
 - **Quién le regala a quién.** Solo lo ve el organizador con el botón de revelar,
   y queda registrado en `reveal_log`. No sale en `/admin` ni en ninguna lista.
 - **"Ya lo compré"** vive en `reservations`, y la consulta de tu propia lista ni
-  siquiera toca esa tabla: no hay forma de que se te escape por pantalla.
+  siquiera toca esa tabla: no hay forma de que se te escape por pantalla. Las
+  listas de deseos sí son públicas dentro del evento (se ven desde la lista de
+  invitados y desde el panel de admin), pero quien las pinta ahí es
+  `ListaPublica`, que a propósito no sabe nada de compras.
 - **Quién te escribió una carta.** `letters` guarda el remitente (hace falta para
   los límites y para que quien escribe vea lo que mandó), pero la consulta del
   buzón **no lo pide**. Lo que no se trae no se filtra por accidente.

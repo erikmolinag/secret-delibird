@@ -352,3 +352,54 @@ export async function cartasEnviadas(participantId: string) {
     .where(eq(schema.letters.fromParticipantId, participantId))
     .orderBy(desc(schema.letters.createdAt));
 }
+
+/** Un deseo como lo ve alguien que no es su dueño: sin posición ni fechas. */
+export type DeseoPublico = {
+  id: string;
+  title: string;
+  note: string | null;
+  price: string | null;
+  url: string | null;
+  siteName: string | null;
+  imageUrl: string | null;
+  priority: number;
+};
+
+/**
+ * Todas las listas del evento, agrupadas por invitado, para que cualquiera
+ * pueda chismosear la de los demás.
+ *
+ * OJO: no trae nada de `reservations`. Quién ya compró qué solo lo ve quien
+ * regala; si se colara aquí, el dueño de la lista vería su sorpresa y de paso
+ * se podría adivinar quién le regala a quién.
+ */
+export async function listasDelEvento(eventId: string) {
+  const filas = await db
+    .select({
+      participantId: schema.wishlistItems.participantId,
+      id: schema.wishlistItems.id,
+      title: schema.wishlistItems.title,
+      note: schema.wishlistItems.note,
+      price: schema.wishlistItems.price,
+      url: schema.wishlistItems.url,
+      siteName: schema.wishlistItems.siteName,
+      imageUrl: schema.wishlistItems.imageUrl,
+      priority: schema.wishlistItems.priority,
+    })
+    .from(schema.wishlistItems)
+    .innerJoin(
+      schema.participants,
+      eq(schema.participants.id, schema.wishlistItems.participantId),
+    )
+    .where(eq(schema.participants.eventId, eventId))
+    // El orden lo manda quien arma la lista; la fecha solo desempata.
+    .orderBy(asc(schema.wishlistItems.position), asc(schema.wishlistItems.createdAt));
+
+  const porInvitado = new Map<string, DeseoPublico[]>();
+  for (const { participantId, ...deseo } of filas) {
+    const lista = porInvitado.get(participantId);
+    if (lista) lista.push(deseo);
+    else porInvitado.set(participantId, [deseo]);
+  }
+  return porInvitado;
+}
