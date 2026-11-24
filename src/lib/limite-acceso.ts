@@ -1,7 +1,9 @@
 import "server-only";
 
+import crypto from "node:crypto";
+
+import { and, count, desc, eq, gte, isNotNull, lt, sql } from "drizzle-orm";
 import { headers } from "next/headers";
-import { and, desc, eq, gte } from "drizzle-orm";
 
 import { db, schema } from "@/db";
 
@@ -11,9 +13,13 @@ import { db, schema } from "@/db";
  * cuenta (y de paso llenarle el buzón a quien se le antoje) nomás tecleando
  * correos en la pantalla de entrada.
  *
- * El conteo por correo sale de `login_tokens`, que ya guarda un renglón por
- * enlace. El de IP vive en memoria a propósito: no queremos una tabla de IPs de
- * visitantes para un intercambio de regalos.
+ * Los dos conteos salen de `login_tokens`, que ya guarda un renglón por enlace.
+ * El de IP vivía en memoria, y en Vercel eso no frena nada: cada instancia
+ * tenía su propio mapa, así que el tope real era diez por instancia y alguien
+ * podía quemar la cuota del día mandando correos a direcciones ajenas.
+ *
+ * Lo que se guarda es una **huella** de la IP, no la IP: no queremos un
+ * registro de visitantes para un intercambio de regalos.
  */
 
 const MINUTO = 60_000;
@@ -26,17 +32,13 @@ const TOPE_CORREO_HORA = 5;
 /** Por IP en una hora, para que no sirva de nada ir rotando correos. */
 const TOPE_IP_HORA = 10;
 
+/** Cuánto se queda un enlace ya vencido antes de que lo barramos. */
+const DIAS_DE_GRACIA = 7;
+
 export type LimiteAcceso =
   | { permitido: true }
   | { permitido: false; motivo: "espera"; segundos: number }
   | { permitido: false; motivo: "correo" | "ip" };
-
-/**
- * Las marcas de tiempo de cada IP. Es "lo mejor que se pueda": en Vercel cada
- * instancia tiene su propio mapa y se reinicia solo, así que frena al que
- * insiste pero no es una garantía. El tope por correo sí es firme.
- */
-const porIp = new Map<string, number[]>();
 
 async function ipDelVisitante() {
   const cabeceras = await headers();
@@ -44,27 +46,27 @@ async function ipDelVisitante() {
   return reenviada || cabeceras.get("x-real-ip") || null;
 }
 
-function vigentes(sellos: number[] | undefined, ahora: number) {
-  return (sellos ?? []).filter((t) => ahora - t < HORA);
-}
+/**
+ * La huella de la IP de quien está pidiendo el enlace.
+ *
+ * Va salada con `AUTH_SECRET` por una razón concreta: una IPv4 son cuatro mil
+ * millones de posibilidades, y un sha256 sin sal se revierte probándolas todas
+ * en un rato. Con la sal, el renglón no dice de dónde entró nadie; solo sirve
+ * para comparar contra otros renglones de la misma hora.
+ */
+export async function huellaDeIp() {
+  const ip = await ipDelVisitante();
+  if (!ip) return null;
 
-/** Tira las IPs que ya no cuentan, para que el mapa no crezca sin fin. */
-function podar(ahora: number) {
-  for (const [ip, sellos] of porIp) {
-    const quedan = vigentes(sellos, ahora);
-    if (quedan.length) porIp.set(ip, quedan);
-    else porIp.delete(ip);
-  }
+  return crypto
+    .createHash("sha256")
+    .update(`${process.env.AUTH_SECRET ?? ""}:${ip}`)
+    .digest("hex");
 }
 
 export async function revisarLimiteAcceso(email: string): Promise<LimiteAcceso> {
   const ahora = Date.now();
-
-  // Primero la IP: es en memoria, no cuesta un viaje a la base.
-  const ip = await ipDelVisitante();
-  if (ip && vigentes(porIp.get(ip), ahora).length >= TOPE_IP_HORA) {
-    return { permitido: false, motivo: "ip" };
-  }
+  const desde = new Date(ahora - HORA);
 
   // Los enlaces que ya se pidieron para ese correo en la última hora. Pedimos
   // uno más que el tope: con saber que lo pasa basta.
@@ -78,7 +80,7 @@ export async function revisarLimiteAcceso(email: string): Promise<LimiteAcceso> 
         // organiza al invitar o al sortear, y no tienen por qué dejar a nadie
         // sin poder entrar justo después de que le llegó su invitación.
         eq(schema.loginTokens.reusable, false),
-        gte(schema.loginTokens.createdAt, new Date(ahora - HORA)),
+        gte(schema.loginTokens.createdAt, desde),
       ),
     )
     .orderBy(desc(schema.loginTokens.createdAt))
@@ -97,20 +99,45 @@ export async function revisarLimiteAcceso(email: string): Promise<LimiteAcceso> 
     return { permitido: false, motivo: "correo" };
   }
 
+  // Y los que salieron de esta misma máquina, para que rotar correos no sirva.
+  const huella = await huellaDeIp();
+  if (huella) {
+    const [desdeAqui] = await db
+      .select({ cuantos: count() })
+      .from(schema.loginTokens)
+      .where(
+        and(
+          eq(schema.loginTokens.ipHash, huella),
+          gte(schema.loginTokens.createdAt, desde),
+        ),
+      );
+
+    if ((desdeAqui?.cuantos ?? 0) >= TOPE_IP_HORA) {
+      return { permitido: false, motivo: "ip" };
+    }
+  }
+
   return { permitido: true };
 }
 
 /**
- * Se llama cuando se le entrega un enlace a alguien, haya salido el correo o
- * no: un enlace creado ya es una llave, y en desarrollo se muestra en pantalla.
+ * Barre los enlaces vencidos hace rato. Sin esto la tabla crece para siempre, y
+ * con ella las huellas de IP: lo que no se guarda no se filtra. Se deja una
+ * semana de gracia para que un enlace que acaba de vencer todavía pueda
+ * contestar "vencido" en vez de "inválido", que es un mensaje más útil.
  */
-export async function anotarEnlacePorIp() {
-  const ip = await ipDelVisitante();
-  if (!ip) return;
-
-  const ahora = Date.now();
-  porIp.set(ip, [...vigentes(porIp.get(ip), ahora), ahora]);
-  if (porIp.size > 500) podar(ahora);
+export async function barrerEnlacesViejos() {
+  await db
+    .delete(schema.loginTokens)
+    .where(
+      and(
+        isNotNull(schema.loginTokens.expiresAt),
+        lt(
+          schema.loginTokens.expiresAt,
+          sql`now() - interval '${sql.raw(String(DIAS_DE_GRACIA))} days'`,
+        ),
+      ),
+    );
 }
 
 export function mensajeDeLimite(limite: LimiteAcceso) {

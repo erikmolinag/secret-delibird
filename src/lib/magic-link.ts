@@ -7,6 +7,7 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, schema } from "@/db";
 import type { User } from "@/db/schema";
 import { nombreDeInvitacion } from "@/lib/datos";
+import { huellaDeIp } from "@/lib/limite-acceso";
 import { nombreDesdeEmail } from "@/lib/utils";
 
 export const VIGENCIA_MINUTOS = 20;
@@ -38,6 +39,7 @@ async function crear(
   redirectTo: string | null | undefined,
   duracionMs: number,
   reusable: boolean,
+  ipHash: string | null,
 ) {
   const token = crypto.randomBytes(32).toString("base64url");
 
@@ -46,6 +48,7 @@ async function crear(
     tokenHash: hashear(token),
     redirectTo: redirectTo ?? null,
     reusable,
+    ipHash,
     expiresAt: new Date(Date.now() + duracionMs),
   });
 
@@ -61,7 +64,8 @@ async function crear(
  * correo de otra persona. Solo guardamos el hash del token.
  */
 export async function crearMagicLink(email: string, redirectTo?: string | null) {
-  return crear(email, redirectTo, VIGENCIA_MINUTOS * 60_000, false);
+  // Se anota la huella de quien lo pidió: es lo que sostiene el tope por IP.
+  return crear(email, redirectTo, VIGENCIA_MINUTOS * 60_000, false, await huellaDeIp());
 }
 
 /**
@@ -79,7 +83,8 @@ export async function crearMagicLink(email: string, redirectTo?: string | null) 
  * desconocido escribiendo direcciones ajenas en una pantalla pública.
  */
 export async function crearEnlaceDuradero(email: string, redirectTo?: string | null) {
-  return crear(email, redirectTo, VIGENCIA_AVISO_DIAS * 86_400_000, true);
+  // Sin huella: lo dispara quien organiza, no quien lo va a recibir.
+  return crear(email, redirectTo, VIGENCIA_AVISO_DIAS * 86_400_000, true, null);
 }
 
 type Resultado =

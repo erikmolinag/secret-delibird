@@ -47,10 +47,21 @@ export const loginTokens = pgTable(
      * uno espera de una invitación guardada en el buzón.
      */
     reusable: boolean("reusable").default(false).notNull(),
+    /**
+     * Huella de la IP que pidió el enlace, para el tope por IP. Es un hash con
+     * AUTH_SECRET de sal, **no la IP**: una IPv4 son cuatro mil millones de
+     * posibilidades y un sha256 pelón se revierte probándolas todas. Así el
+     * tope es firme en serverless sin que esto sea un registro de visitantes.
+     * Null en los enlaces que dispara quien organiza.
+     */
+    ipHash: text("ip_hash"),
     usedAt: timestamp("used_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [index("login_tokens_email_idx").on(t.email)],
+  (t) => [
+    index("login_tokens_email_idx").on(t.email),
+    index("login_tokens_ip_idx").on(t.ipHash, t.createdAt),
+  ],
 );
 
 export const events = pgTable(

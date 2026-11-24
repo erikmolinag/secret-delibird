@@ -5,7 +5,7 @@ import { z } from "zod";
 
 import { cerrarSesion } from "@/lib/auth";
 import {
-  anotarEnlacePorIp,
+  barrerEnlacesViejos,
   mensajeDeLimite,
   revisarLimiteAcceso,
 } from "@/lib/limite-acceso";
@@ -42,7 +42,10 @@ export async function solicitarAccesoAccion(
   }
 
   const url = await crearMagicLink(email, redirectTo);
-  await anotarEnlacePorIp();
+
+  // De vez en cuando, no en cada acceso: no vale un DELETE por persona que
+  // entra, pero la tabla tampoco debe crecer para siempre.
+  if (Math.random() < 0.05) await barrerEnlacesViejos();
 
   const plantilla = plantillaMagicLink(url, VIGENCIA_MINUTOS);
   const envio = await enviarCorreo({ to: email, tipo: "acceso", ...plantilla });
