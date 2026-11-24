@@ -163,6 +163,18 @@ consulta, pregúntate qué deja ver.
   buzón **no lo pide**. Lo que no se trae no se filtra por accidente.
 - **El destinatario de una carta no viene del formulario**: sale de la asignación
   del sorteo, en el servidor. Así no hay campo escondido que cambiar.
+- **Un evento sin invitación enviada no existe para el invitado.** La regla de
+  "este renglón es mío" vive en una sola función, `esSuyo()` de `datos.ts`, y la
+  usan tanto la lista de eventos como la página del evento: *(cuenta o correo) y
+  (ya le invitaron o es quien organiza)*. Las dos mitades importan. El **correo**
+  cuenta porque el renglón se amarra a la cuenta en un solo lugar de todo el
+  código —`consumirMagicLink`—, así que a quien ya trae sesión viva (treinta
+  días) lo agregaron después de su último acceso y su renglón sigue sin dueño.
+  Y lo de **`invitedAt`** es lo que hace que el botón de enviar invitaciones
+  signifique algo: sin eso, cualquiera que entrara a la app después de que lo
+  agregaron veía el evento y se metía antes de que le avisaran. Quien organiza
+  nunca se invita a sí mismo, de ahí la excepción; si la quitas, el organizador
+  pierde su propia lista de deseos.
 - **`/admin`** responde 404 a quien no esté en `ADMIN_EMAILS`, no "prohibido":
   para los demás no existe.
 - **`src/lib/og.ts`** resuelve el DNS antes de abrir un link y rechaza IPs

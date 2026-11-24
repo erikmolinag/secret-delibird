@@ -25,7 +25,7 @@ export default async function MisEventos() {
 
   const [organizados, participaciones] = await Promise.all([
     eventosDelUsuario(usuario.id),
-    participacionesDelUsuario(usuario.id),
+    participacionesDelUsuario(usuario),
   ]);
 
   const resumen = await resumenDeEventos(organizados.map((e) => e.id));

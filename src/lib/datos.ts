@@ -9,6 +9,7 @@ import {
   getTableColumns,
   inArray,
   isNotNull,
+  or,
   sql,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -16,7 +17,39 @@ import { alias } from "drizzle-orm/pg-core";
 import { db, schema } from "@/db";
 import { codigoAmazon } from "@/lib/ajustes";
 import { conReferidoDeAmazon } from "@/lib/amazon";
-import { nombreDesdeEmail } from "@/lib/utils";
+import { nombreDesdeEmail, normalizarEmail } from "@/lib/utils";
+
+/**
+ * Cuándo un renglón de invitado es de esta persona. Una sola regla, usada tanto
+ * en la lista de eventos como en la página del evento: antes la lista exigía
+ * que el renglón ya estuviera amarrado a la cuenta y la página se conformaba
+ * con el correo, y de ahí salía que el mismo evento le apareciera a uno y al
+ * otro no.
+ *
+ * **El correo cuenta** porque el renglón se amarra a la cuenta en un solo lugar
+ * de todo el código: cuando alguien consume un magic link (ver
+ * `consumirMagicLink`). A quien ya trae sesión viva —duran treinta días— lo
+ * agregaron después de su último acceso, así que su renglón sigue sin dueño
+ * aunque la cuenta exista desde hace meses.
+ *
+ * **Y tiene que estar invitado de verdad.** Estar en la lista de invitados no
+ * basta: quien organiza arma el evento en privado y decide cuándo se enteran
+ * los demás. Sin esto, cualquiera que entrara a la app después de que lo
+ * agregaron veía el evento y se podía meter antes de que le avisaran. El
+ * renglón de quien organiza nunca se invita a sí mismo, de ahí la excepción.
+ */
+function esSuyo(usuario: { id: string; email: string }) {
+  return and(
+    or(
+      eq(schema.participants.userId, usuario.id),
+      eq(schema.participants.email, normalizarEmail(usuario.email)),
+    ),
+    or(
+      isNotNull(schema.participants.invitedAt),
+      eq(schema.participants.isOrganizer, true),
+    ),
+  );
+}
 
 /** Eventos que organiza esta persona. */
 export async function eventosDelUsuario(userId: string) {
@@ -28,7 +61,10 @@ export async function eventosDelUsuario(userId: string) {
 }
 
 /** Eventos ajenos en los que participa. */
-export async function participacionesDelUsuario(userId: string) {
+export async function participacionesDelUsuario(usuario: {
+  id: string;
+  email: string;
+}) {
   return db
     .select({
       participante: {
@@ -41,7 +77,7 @@ export async function participacionesDelUsuario(userId: string) {
     .from(schema.participants)
     .innerJoin(schema.events, eq(schema.events.id, schema.participants.eventId))
     .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
-    .where(eq(schema.participants.userId, userId))
+    .where(esSuyo(usuario))
     .orderBy(desc(schema.events.createdAt));
 }
 
@@ -67,7 +103,7 @@ export async function invitadosDelEvento(eventId: string) {
     .orderBy(desc(schema.participants.isOrganizer), asc(schema.participants.name));
 }
 
-/** El invitado solo es suyo si coincide la cuenta o el correo. */
+/** El renglón de invitado de esta persona en un evento, si de verdad es suyo. */
 export async function participanteDelUsuario(
   participantId: string,
   usuario: { id: string; email: string },
@@ -84,17 +120,10 @@ export async function participanteDelUsuario(
     .from(schema.participants)
     .innerJoin(schema.events, eq(schema.events.id, schema.participants.eventId))
     .leftJoin(schema.users, eq(schema.users.id, schema.participants.userId))
-    .where(eq(schema.participants.id, participantId))
+    .where(and(eq(schema.participants.id, participantId), esSuyo(usuario)))
     .limit(1);
 
-  if (!fila) return null;
-
-  const esSuyo =
-    fila.participante.userId === usuario.id ||
-    fila.participante.email === usuario.email.toLowerCase();
-
-  if (!esSuyo) return null;
-  return fila;
+  return fila ?? null;
 }
 
 export async function reglasDelEvento(eventId: string) {
