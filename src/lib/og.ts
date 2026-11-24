@@ -25,9 +25,40 @@ const MAX_HTML = 4_000_000;
 /** Redirecciones que seguimos (las ligas cortas tipo a.co encadenan varias). */
 const SALTOS = 4;
 
-function esIpPrivada(ip: string) {
-  if (net.isIPv4(ip)) {
-    const [a, b] = ip.split(".").map(Number);
+/**
+ * Saca la IPv4 que trae dentro una IPv6, si la trae.
+ *
+ * IPv6 tiene varias formas de escribir una IPv4: `::ffff:192.168.1.1`,
+ * la misma en hexadecimal (`::ffff:c0a8:101`) y la vieja `::192.168.1.1`.
+ *
+ * Esto importa: quien quiera llegar a la red interna solo tiene que publicar un
+ * registro **AAAA** con `::ffff:169.254.169.254` en su propio dominio. La
+ * consulta de DNS devuelve esa dirección tal cual, como IPv6, y si solo se
+ * comparan prefijos de texto, se cuela. Desenvolverla y revisarla como la IPv4
+ * que es cierra las tres formas de un jalón, en vez de ir tapando una por una.
+ */
+function desenvolverIpv4(ip: string) {
+  const bajo = ip.toLowerCase();
+
+  const punteada = bajo.match(/^::(?:ffff:)?(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (punteada) return punteada[1];
+
+  const hexa = bajo.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (hexa) {
+    const alto = parseInt(hexa[1], 16);
+    const bajo16 = parseInt(hexa[2], 16);
+    return [alto >>> 8, alto & 255, bajo16 >>> 8, bajo16 & 255].join(".");
+  }
+
+  return null;
+}
+
+export function esIpPrivada(ip: string): boolean {
+  const comoIpv4 = net.isIPv4(ip) ? ip : desenvolverIpv4(ip);
+
+  if (comoIpv4) {
+    const [a, b] = comoIpv4.split(".").map(Number);
+    if ([a, b].some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
     if (a === 10 || a === 127 || a === 0) return true;
     if (a === 192 && b === 168) return true;
     if (a === 172 && b >= 16 && b <= 31) return true;
@@ -35,16 +66,14 @@ function esIpPrivada(ip: string) {
     if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
     return false;
   }
+
   const bajo = ip.toLowerCase();
   return (
     bajo === "::1" ||
     bajo === "::" ||
     bajo.startsWith("fc") ||
     bajo.startsWith("fd") ||
-    bajo.startsWith("fe80") ||
-    bajo.startsWith("::ffff:127.") ||
-    bajo.startsWith("::ffff:10.") ||
-    bajo.startsWith("::ffff:192.168.")
+    bajo.startsWith("fe80")
   );
 }
 

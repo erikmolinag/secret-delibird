@@ -4,7 +4,7 @@ import { eq, or } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
 import { db, schema } from "@/db";
-import { cerrarSesion, requerirUsuario } from "@/lib/auth";
+import { cerrarSesion, esAdmin, requerirUsuario } from "@/lib/auth";
 import { PALABRA_BORRAR } from "@/lib/cuenta";
 
 export type EstadoBorrado = { error?: string };
@@ -27,6 +27,17 @@ export async function borrarCuentaAccion(
   datos: FormData,
 ): Promise<EstadoBorrado> {
   const usuario = await requerirUsuario();
+
+  // Una cuenta del panel no se borra desde el perfil. Se iría la cuenta pero el
+  // correo seguiría en ADMIN_EMAILS, así que volvería a ser admin en cuanto
+  // entrara otra vez: borrarla no quita el acceso, nomás hace ruido. El botón
+  // tampoco se pinta, pero la acción es la que manda.
+  if (esAdmin(usuario)) {
+    return {
+      error:
+        "Esta cuenta tiene acceso al panel. Para borrarla, primero quita su correo de ADMIN_EMAILS.",
+    };
+  }
 
   const confirmacion = String(datos.get("confirmacion") ?? "")
     .trim()

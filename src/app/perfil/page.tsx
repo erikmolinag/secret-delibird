@@ -127,7 +127,12 @@ export default async function Perfil({
         </div>
       ) : null}
 
-      {!bienvenida ? (
+      {/*
+        A las cuentas del panel no se les ofrece: borrarla no les quitaría el
+        acceso, porque el correo sigue en ADMIN_EMAILS y volverían a ser admin
+        al entrar otra vez. La acción también lo rechaza, no solo el botón.
+      */}
+      {!bienvenida && !esAdmin(usuario) ? (
         <BorrarCuenta
           organiza={organizados.map((evento) => evento.name)}
           intercambios={participaciones

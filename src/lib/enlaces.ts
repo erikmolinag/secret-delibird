@@ -20,9 +20,22 @@ export function enlaceMapa(lugar: string | null, lugarUrl: string | null) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lugar.trim())}`;
 }
 
-/** Formato de fecha que pide Google Calendar: 20261224T200000Z */
+/**
+ * Formato de fecha que pide Google Calendar: `20261224T200000`.
+ *
+ * **Va sin la `Z` del final a propósito.** Con ella, Google lo lee como un
+ * instante en UTC y lo convierte a la zona de quien abre el enlace: la posada
+ * de las 8 aparecía a las 2 de la tarde. Sin ella, Google lo lee como hora de
+ * pared y pone las 8, que es lo que escribió quien organiza y lo que la app
+ * enseña en pantalla.
+ *
+ * El precio: alguien que abra el enlace desde otro país lo verá a las 8 de su
+ * hora, no de la hora del evento. Para una posada a la que todos van en
+ * persona, es lo correcto; si algún día hace falta la otra lectura, se le
+ * agrega `ctz` a la liga con la zona del evento.
+ */
 function aFormatoCalendario(fecha: Date) {
-  return fecha.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  return fecha.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "");
 }
 
 /**

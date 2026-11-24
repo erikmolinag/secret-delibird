@@ -5,21 +5,40 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Las fechas se guardan y se pintan como **hora de pared**: "la posada es a
+ * las 8" quiere decir las 8 donde va a ser la posada, no un instante absoluto.
+ *
+ * El `<input type=datetime-local>` manda "2026-12-13T20:00", sin zona, y
+ * `new Date` lo interpreta en la zona de quien corre: en tu máquina es la de
+ * México y en Vercel es UTC. Eso hacía que el mismo texto guardara dos cosas
+ * distintas según dónde se creara el evento.
+ *
+ * La regla es: **todo se guarda y se lee en UTC**, así que los componentes UTC
+ * de la fecha son siempre la hora que escribió quien organiza, corra donde
+ * corra. Por eso estos formateadores llevan `timeZone` fijo; sin eso, la misma
+ * fecha se vería distinta en tu laptop que en producción.
+ */
+const ZONA = "UTC";
+
 const fechaLarga = new Intl.DateTimeFormat("es-MX", {
   weekday: "long",
   day: "numeric",
   month: "long",
   year: "numeric",
+  timeZone: ZONA,
 });
 
 const fechaCorta = new Intl.DateTimeFormat("es-MX", {
   day: "numeric",
   month: "short",
+  timeZone: ZONA,
 });
 
 const horaCorta = new Intl.DateTimeFormat("es-MX", {
   hour: "numeric",
   minute: "2-digit",
+  timeZone: ZONA,
 });
 
 export function formatearFecha(fecha: Date | null | undefined, conHora = true) {
@@ -43,20 +62,32 @@ export function formatearPresupuesto(monto: number | null, moneda: string) {
   }).format(monto);
 }
 
-/** Convierte "<input type=datetime-local>" a Date, o null si viene vacio. */
+/**
+ * Convierte "<input type=datetime-local>" a Date, o null si viene vacio.
+ *
+ * Se le pega la `Z` a propósito: el texto viene sin zona, y sin esto `new Date`
+ * lo leería en la zona de quien corre —México en tu laptop, UTC en Vercel— y el
+ * mismo "20:00" quedaría guardado como dos instantes distintos.
+ */
 export function parsearFechaLocal(valor: FormDataEntryValue | null) {
   if (typeof valor !== "string" || !valor.trim()) return null;
-  const fecha = new Date(valor);
+
+  const texto = valor.trim();
+  const fecha = new Date(/[zZ]$|[+-]\d{2}:?\d{2}$/.test(texto) ? texto : `${texto}Z`);
+
   return Number.isNaN(fecha.getTime()) ? null : fecha;
 }
 
-/** Para los <input type=datetime-local> precargados. */
+/**
+ * Para los <input type=datetime-local> precargados. Lee los componentes UTC,
+ * que son los que guardan la hora que se escribió.
+ */
 export function aValorInputFecha(fecha: Date | null) {
   if (!fecha) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(
-    fecha.getDate(),
-  )}T${pad(fecha.getHours())}:${pad(fecha.getMinutes())}`;
+  return `${fecha.getUTCFullYear()}-${pad(fecha.getUTCMonth() + 1)}-${pad(
+    fecha.getUTCDate(),
+  )}T${pad(fecha.getUTCHours())}:${pad(fecha.getUTCMinutes())}`;
 }
 
 export function normalizarEmail(valor: unknown) {

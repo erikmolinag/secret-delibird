@@ -181,6 +181,31 @@ consulta, pregúntate qué deja ver.
   agregaron veía el evento y se metía antes de que le avisaran. Quien organiza
   nunca se invita a sí mismo, de ahí la excepción; si la quitas, el organizador
   pierde su propia lista de deseos.
+- **Las fechas de evento son "hora de pared", no instantes.** "La posada es a
+  las 8" quiere decir las 8 donde va a ser. Se guardan y se leen **siempre en
+  UTC**, así que los componentes UTC de la fecha son la hora que escribió quien
+  organiza. De ahí tres cosas que no se pueden tocar por separado:
+  `parsearFechaLocal` le pega una `Z` al texto del `datetime-local`;
+  `aValorInputFecha` lee con `getUTC*`; y los `Intl.DateTimeFormat` de
+  `utils.ts` llevan `timeZone: "UTC"`. El enlace de Google Calendar va **sin la
+  `Z`**, para que lo lea como hora de pared y no lo convierta.
+  Esto salió de un bug que **solo se veía en producción**: `new Date("...T20:00")`
+  usa la zona de quien corre, que en la laptop es México y en Vercel es UTC, así
+  que el mismo texto guardaba dos instantes distintos y el calendario abría la
+  posada seis horas antes. Las pruebas de `pruebas/fechas.test.ts` corren con el
+  reloj en México a propósito.
+- **Las cabeceras de seguridad están en `next.config.ts`.** Falta la cara, una
+  Content-Security-Policy completa: tiene que dejar pasar Turnstile y sus
+  marcos, las fuentes de Google y los sprites, y mal puesta deja la app en
+  blanco.
+- **`esIpPrivada` desenvuelve las IPv4 disfrazadas de IPv6** antes de revisarlas
+  (`::ffff:169.254.169.254` y sus formas hexadecimal y vieja). No es teoría:
+  basta con publicar un registro **AAAA** con esa dirección en un dominio propio
+  y pegar el enlace en una lista de deseos. Si vuelves a tocar ese filtro, no
+  compares prefijos de texto: desenvuelve y revisa la IPv4.
+- **Una cuenta de `ADMIN_EMAILS` no se puede borrar desde el perfil**, ni se le
+  ofrece el botón. Borrarla no quitaría el acceso —el correo sigue en la
+  variable y vuelve a ser admin al entrar—, nomás dejaría tiradas sus cosas.
 - **La pantalla de entrar trae captcha** (Cloudflare Turnstile). Tres cosas que
   no son obvias: (1) **las dos llaves o ninguna** —con `TURNSTILE_SITE_KEY` y
   `TURNSTILE_SECRET_KEY` puestas se prende, sin ellas no se pinta ni se revisa
