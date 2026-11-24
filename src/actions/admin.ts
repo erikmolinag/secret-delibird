@@ -14,6 +14,7 @@ import {
 import { codigoAmazonValido } from "@/lib/amazon";
 import { requerirAdmin } from "@/lib/auth";
 import { ENTRENADORES } from "@/lib/avatares";
+import { CLAVE_PRIVACIDAD, CLAVE_TERMINOS } from "@/lib/legales";
 import { esProveedor, remitenteValido } from "@/lib/proveedores";
 
 function texto(datos: FormData, campo: string) {
@@ -70,6 +71,40 @@ export async function guardarCodigoAmazonAccion(
   }
 
   await guardarAjuste(CLAVE_AMAZON, valor);
+  refresh();
+
+  return { ok: true, guardados: (previo.guardados ?? 0) + 1 };
+}
+
+/** Un texto legal largo: se corta por arriba para que no quepa un libro. */
+const TOPE_LEGAL = 40_000;
+
+/**
+ * El aviso de privacidad y los términos. Se guardan en `settings`; mientras
+ * estén vacíos, las páginas públicas enseñan los textos de arranque que vienen
+ * en `src/lib/legales.ts`.
+ */
+export async function guardarLegalesAccion(
+  previo: EstadoAjuste,
+  datos: FormData,
+): Promise<EstadoAjuste> {
+  await requerirAdmin();
+
+  const privacidad = texto(datos, "privacidad");
+  const condiciones = texto(datos, "terminos");
+
+  if ((privacidad?.length ?? 0) > TOPE_LEGAL || (condiciones?.length ?? 0) > TOPE_LEGAL) {
+    return {
+      error: `Cada texto cabe en ${TOPE_LEGAL.toLocaleString("es-MX")} caracteres.`,
+      guardados: previo.guardados,
+    };
+  }
+
+  await Promise.all([
+    guardarAjuste(CLAVE_PRIVACIDAD, privacidad),
+    guardarAjuste(CLAVE_TERMINOS, condiciones),
+  ]);
+
   refresh();
 
   return { ok: true, guardados: (previo.guardados ?? 0) + 1 };

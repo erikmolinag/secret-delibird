@@ -27,6 +27,21 @@ export async function leerAjuste(clave: string) {
   return fila?.valor.trim() || null;
 }
 
+/** El valor y cuándo se tocó, para poder decir "actualizado el ...". */
+export async function leerAjusteConFecha(clave: string) {
+  const [fila] = await db
+    .select({
+      valor: schema.settings.value,
+      actualizado: schema.settings.updatedAt,
+    })
+    .from(schema.settings)
+    .where(eq(schema.settings.key, clave))
+    .limit(1);
+
+  if (!fila?.valor.trim()) return null;
+  return { valor: fila.valor.trim(), actualizado: fila.actualizado };
+}
+
 /** Guardar con valor vacío borra el ajuste: así se apaga sin dejar basura. */
 export async function guardarAjuste(clave: string, valor: string | null) {
   if (!valor) {

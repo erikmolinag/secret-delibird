@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Baloo_2, Nunito } from "next/font/google";
+import Link from "next/link";
 import { Encabezado } from "@/components/encabezado";
 import { Nieve } from "@/components/nieve";
 import { spritePokemon } from "@/lib/pokemon";
@@ -57,6 +58,20 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             Pokémon Showdown
           </a>
           . Proyecto personal, sin afiliación con Nintendo, Creatures ni Game Freak.
+          <span className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+            <Link
+              href="/privacidad"
+              className="font-bold text-azul underline-offset-2 hover:underline"
+            >
+              Aviso de privacidad
+            </Link>
+            <Link
+              href="/terminos"
+              className="font-bold text-azul underline-offset-2 hover:underline"
+            >
+              Términos de uso
+            </Link>
+          </span>
           <span className="mt-1.5 flex items-center justify-center gap-1.5">
             Desarrollado por{" "}
             <a

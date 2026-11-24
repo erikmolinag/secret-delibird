@@ -181,6 +181,19 @@ consulta, pregúntate qué deja ver.
   agregaron veía el evento y se metía antes de que le avisaran. Quien organiza
   nunca se invita a sí mismo, de ahí la excepción; si la quitas, el organizador
   pierde su propia lista de deseos.
+- **Los dos topes de la pantalla de entrar viven en `login_tokens`.** El de por
+  correo (5/hora, 1/minuto) siempre estuvo ahí; el de por IP vivía en un `Map`
+  en memoria y en Vercel eso no frenaba nada, porque cada instancia tenía el
+  suyo. Ahora cada enlace guarda una **huella** de la IP —sha256 con
+  `AUTH_SECRET` de sal, no la IP: una IPv4 son cuatro mil millones de
+  posibilidades y un hash sin sal se revierte probándolas todas— y el conteo es
+  una consulta. Los enlaces vencidos se barren solos a la semana, así que las
+  huellas tampoco se acumulan.
+- **Los textos legales viven en `settings`** (`aviso_privacidad`, `terminos`) y
+  se editan en `/admin`. Si están vacíos, `src/lib/legales.ts` tiene los de
+  arranque, así que las páginas nunca salen en blanco. `TextoLegal` entiende
+  `## `, `- ` y línea en blanco, y **no interpreta HTML a propósito**: es una
+  página pública alimentada por un campo de texto.
 - **Hay dos clases de magic link y no se parecen.** `crearMagicLink` es el de la
   pantalla de entrar: veinte minutos y un solo uso, porque cualquiera lo puede
   disparar escribiendo el correo de otro. `crearEnlaceDuradero` es el que va

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { editarUsuarioAccion } from "@/actions/admin";
 import { AjusteAmazon } from "@/components/ajuste-amazon";
 import { AjusteCorreo } from "@/components/ajuste-correo";
+import { AjusteLegales } from "@/components/ajuste-legales";
 import { AvatarEntrenador } from "@/components/avatar";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Campo, Entrada, claseInput } from "@/components/ui/campo";
@@ -18,6 +19,7 @@ import {
 import { ajustesDeCorreo, codigoAmazon } from "@/lib/ajustes";
 import { requerirAdmin } from "@/lib/auth";
 import { GRUPOS_ENTRENADORES } from "@/lib/avatares";
+import { avisoDePrivacidad, terminos } from "@/lib/legales";
 import {
   correosFallidosHoy,
   intercambiosParaAdmin,
@@ -39,16 +41,27 @@ export const instant = false;
 export default async function Admin() {
   await requerirAdmin();
 
-  const [resumen, intercambios, usuarios, amazon, correo, correos, fallidos] =
-    await Promise.all([
-      resumenAdmin(),
-      intercambiosParaAdmin(),
-      usuariosParaAdmin(),
-      codigoAmazon(),
-      ajustesDeCorreo(),
-      ultimosCorreos(),
-      correosFallidosHoy(),
-    ]);
+  const [
+    resumen,
+    intercambios,
+    usuarios,
+    amazon,
+    correo,
+    correos,
+    fallidos,
+    privacidad,
+    condiciones,
+  ] = await Promise.all([
+    resumenAdmin(),
+    intercambiosParaAdmin(),
+    usuariosParaAdmin(),
+    codigoAmazon(),
+    ajustesDeCorreo(),
+    ultimosCorreos(),
+    correosFallidosHoy(),
+    avisoDePrivacidad(),
+    terminos(),
+  ]);
 
   // Las llaves viven en Vercel: aquí solo se dice si están, nunca su valor.
   const llaves: Record<Proveedor, boolean> = {
@@ -128,6 +141,34 @@ export default async function Admin() {
             cambia todos los enlaces de golpe.
           </p>
           <AjusteAmazon codigo={amazon} />
+        </TarjetaCuerpo>
+      </Tarjeta>
+
+      <Tarjeta>
+        <TarjetaEncabezado>
+          <TituloSeccion>Aviso de privacidad y términos</TituloSeccion>
+          <span className="text-sm text-gris">
+            <Link href="/privacidad" className="font-bold text-azul hover:underline">
+              ver
+            </Link>
+            {" · "}
+            <Link href="/terminos" className="font-bold text-azul hover:underline">
+              ver
+            </Link>
+          </span>
+        </TarjetaEncabezado>
+        <TarjetaCuerpo className="space-y-3">
+          <p className="text-sm text-gris">
+            Los textos que ven en <code>/privacidad</code> y <code>/terminos</code>.
+            Vienen con una versión de arranque que describe lo que la app hace de
+            verdad; edítala a tu gusto. No es asesoría legal: si esto crece, que
+            los revise alguien que sepa.
+          </p>
+          <AjusteLegales
+            privacidad={privacidad.texto}
+            terminos={condiciones.texto}
+            propios={{ privacidad: privacidad.propio, terminos: condiciones.propio }}
+          />
         </TarjetaCuerpo>
       </Tarjeta>
 
