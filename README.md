@@ -120,8 +120,10 @@ Copia `.env.example` a `.env.local`:
 | `DATABASE_URL` | Postgres. Local: `postgres://delibird:delibird@localhost:5433/secret_delibird` |
 | `AUTH_SECRET` | Firma la cookie de sesión. `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
 | `PLUNK_API_KEY` | Vacío en local. En producción, la llave `sk_...` de Plunk |
-| `RESEND_API_KEY` | Solo si te regresas a Resend: si hay llave de Plunk, gana Plunk |
-| `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>` |
+| `RESEND_API_KEY` | La llave `re_...` de Resend. Es el respaldo: entra cuando Plunk no contesta |
+| `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>`. La usan los dos si no traen la suya |
+| `EMAIL_FROM_PLUNK` | Opcional. La dirección del dominio verificado en Plunk |
+| `EMAIL_FROM_RESEND` | Opcional. La del dominio verificado en Resend (aquí, `email.delibird.app`) |
 | `APP_URL` | La URL pública. Es la base de los magic links |
 | `ADMIN_EMAILS` | Correos (separados por coma) que pueden entrar a `/admin`. Vacía, nadie entra |
 
@@ -183,10 +185,31 @@ Gone`. La buena es `https://next-api.useplunk.com/v1/send`, que es la que trae
 el código por omisión; si algún día la vuelven a mover, se cambia con
 `PLUNK_API_URL` sin tocar el código ni volver a desplegar.
 
-**Para regresarse a Resend** basta con quitar `PLUNK_API_KEY` y dejar
-`RESEND_API_KEY` en Vercel: `src/lib/mail.ts` usa Plunk si hay llave de Plunk y
-si no cae a Resend. No hace falta redesplegar, nomás volver a correr el deploy
-para que tome las variables.
+### Los dos proveedores a la vez
+
+`src/lib/mail.ts` intenta con Plunk y, si Plunk no está —caído, sin cuota, con
+la llave muerta—, se cae solo a Resend. Si el que falla contesta que el correo
+va mal armado (un `422`, una dirección inválida), ahí no reintenta: el otro
+diría lo mismo.
+
+Para que la caída sirva, las dos llaves tienen que estar puestas en Vercel al
+mismo tiempo. Y como cada proveedor manda desde el dominio que tiene verificado
+—Plunk desde `delibird.app`, Resend desde `email.delibird.app`—, cada uno
+necesita su propia dirección en `EMAIL_FROM_PLUNK` y `EMAIL_FROM_RESEND`. Con
+una sola `EMAIL_FROM` el respaldo se cae en el momento de usarse, porque Resend
+rechaza un remitente que no es de su dominio.
+
+**Esto no es hipotético.** El 23 de noviembre de 2026 Plunk empezó a contestar
+`500 INTERNAL_SERVER_ERROR` a todo lo que llevara autenticación —su propio
+panel incluido, hasta para iniciar sesión con GitHub— y su página de estado
+siguió diciendo "All Systems Operational" (el feed de incidentes no se
+actualizaba desde el 30 de septiembre). Nadie podía entrar a la app, porque
+entrar *es* un correo. De ahí salió la caída automática, con sus pruebas en
+`pruebas/correo.test.ts`.
+
+Mientras Plunk siga caído se puede quitar `PLUNK_API_KEY` para no gastar el
+viaje de ida, pero no hace falta: el `500` llega rápido y el correo sale por
+Resend de todos modos.
 
 Aunque ya no haya tope diario, la pantalla de entrada conserva sus topes
 (`src/lib/limite-acceso.ts`): un enlace por minuto y cinco por hora por correo
@@ -205,7 +228,7 @@ node -e "const d=require('node:dns').promises;d.setServers(['1.1.1.1']);d.resolv
 
 ### 3. Vercel (la app)
 
-Importa el repo, deja el preset de Next.js y pon las seis variables en
+Importa el repo, deja el preset de Next.js y pon las variables en
 Production y Preview:
 
 | Variable | Valor |
@@ -213,7 +236,10 @@ Production y Preview:
 | `DATABASE_URL` | la cadena **pooled** de Neon |
 | `AUTH_SECRET` | `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
 | `PLUNK_API_KEY` | la llave secreta `sk_...` de Plunk |
+| `RESEND_API_KEY` | la llave `re_...` de Resend, para que haya a dónde caerse |
 | `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>` |
+| `EMAIL_FROM_PLUNK` | la dirección del dominio verificado en Plunk |
+| `EMAIL_FROM_RESEND` | la del dominio verificado en Resend |
 | `APP_URL` | `https://tudominio.com` |
 | `ADMIN_EMAILS` | tu correo, el mismo con el que entras |
 

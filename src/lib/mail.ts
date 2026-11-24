@@ -8,11 +8,23 @@ type Correo = { to: string; subject: string; html: string; text: string };
 type Resultado = { enviado: true } | { enviado: false; motivo: string };
 
 /**
+ * Lo que contesta un proveedor. `caerse` dice si vale la pena intentar con el
+ * otro: cuando el proveedor está roto, sí; cuando el correo va mal armado, no,
+ * porque el otro lo rechazaría igual.
+ */
+type Intento =
+  | { enviado: true }
+  | { enviado: false; motivo: string; caerse: boolean };
+
+/**
  * La API de Plunk. La v1 vieja (api.useplunk.com) contesta 410: se movieron a
  * next-api. Con PLUNK_API_URL se puede apuntar a otro lado sin tocar código.
+ * Se lee en cada envío, no al cargar el módulo, para que cambiar la variable
+ * surta efecto sin volver a construir.
  */
-const PLUNK_URL =
-  process.env.PLUNK_API_URL || "https://next-api.useplunk.com/v1/send";
+function urlDePlunk() {
+  return process.env.PLUNK_API_URL || "https://next-api.useplunk.com/v1/send";
+}
 
 /** Cuánto esperamos a que conteste el proveedor antes de rendirnos. */
 const ESPERA_MS = 15_000;
@@ -25,17 +37,45 @@ function partirRemitente(remitente: string) {
 }
 
 /**
- * Manda el correo. Usa Plunk si hay PLUNK_API_KEY y si no cae a Resend: así se
- * puede cambiar de proveedor —o regresarse— nomás moviendo variables en Vercel,
- * sin volver a desplegar. Sin ninguna de las dos llaves, que es como corre en
- * desarrollo, lo escribe en la consola y avisa que no se envió.
+ * Cada proveedor manda desde el dominio que tiene verificado —Plunk desde
+ * `delibird.app`, Resend desde `email.delibird.app`— y usar el remitente del
+ * otro hace que rechace el correo. Por eso cada uno puede traer su propia
+ * dirección, y `EMAIL_FROM` queda como la de siempre para los dos.
+ */
+function remitente(propio: string | undefined) {
+  return propio?.trim() || process.env.EMAIL_FROM?.trim() || null;
+}
+
+/**
+ * Manda el correo. Intenta con Plunk y, si Plunk no está —caído, sin cuota, con
+ * la llave muerta—, se cae a Resend; con una sola llave usa esa nomás. Lo que
+ * importa es que una caída del proveedor no deje a nadie sin poder entrar: el
+ * acceso a la app es un correo.
+ *
+ * Sin ninguna de las dos llaves, que es como corre en desarrollo, lo escribe en
+ * la consola y avisa que no se envió.
  */
 export async function enviarCorreo(correo: Correo): Promise<Resultado> {
   const plunk = process.env.PLUNK_API_KEY;
   const resend = process.env.RESEND_API_KEY;
-  const remitente = process.env.EMAIL_FROM?.trim() || null;
 
-  if (!plunk && !resend) {
+  const proveedores: { nombre: string; enviar: () => Promise<Intento> }[] = [];
+  if (plunk) {
+    proveedores.push({
+      nombre: "Plunk",
+      enviar: () =>
+        conPlunk(plunk, remitente(process.env.EMAIL_FROM_PLUNK), correo),
+    });
+  }
+  if (resend) {
+    proveedores.push({
+      nombre: "Resend",
+      enviar: () =>
+        conResend(resend, remitente(process.env.EMAIL_FROM_RESEND), correo),
+    });
+  }
+
+  if (proveedores.length === 0) {
     console.log(`
 === CORREO (modo desarrollo, sin llave de correo) ===
 Para:   ${correo.to}
@@ -47,15 +87,46 @@ ${correo.text}
     return { enviado: false, motivo: "sin-api-key" };
   }
 
-  if (plunk) return conPlunk(plunk, remitente, correo);
-  return conResend(resend as string, remitente, correo);
+  const motivos: string[] = [];
+
+  for (const [lugar, proveedor] of proveedores.entries()) {
+    const intento = await proveedor.enviar();
+
+    if (intento.enviado) {
+      // Que quede en el registro cuando salió por el segundo: es la pista de
+      // que el primero anda mal, aunque nadie se haya quedado sin su correo.
+      if (lugar > 0) {
+        console.warn(
+          `Correo enviado con ${proveedor.nombre} después de ${motivos.join(", ")}`,
+        );
+      }
+      return { enviado: true };
+    }
+
+    console.error(`${proveedor.nombre} no envió:`, intento.motivo);
+    motivos.push(`${proveedor.nombre}: ${intento.motivo}`);
+
+    // El correo es el que está mal, no el proveedor: el siguiente diría lo
+    // mismo y mandarlo otra vez nomás tarda.
+    if (!intento.caerse) break;
+  }
+
+  return { enviado: false, motivo: motivos.join(" / ") };
 }
+
+/**
+ * Un 400 o un 422 significan que el correo va mal armado —dirección inválida,
+ * falta el asunto— y eso no lo arregla cambiar de proveedor. Todo lo demás
+ * (500, 429, llave muerta, red caída) es del proveedor, y ahí sí conviene
+ * intentar con el otro.
+ */
+const CULPA_NUESTRA = new Set([400, 404, 413, 422]);
 
 async function conPlunk(
   llave: string,
   remitente: string | null,
   correo: Correo,
-): Promise<Resultado> {
+): Promise<Intento> {
   // Plunk manda un solo cuerpo (HTML): no tiene campo aparte para el texto.
   const cuerpo: Record<string, unknown> = {
     to: correo.to,
@@ -73,7 +144,7 @@ async function conPlunk(
   }
 
   try {
-    const respuesta = await fetch(PLUNK_URL, {
+    const respuesta = await fetch(urlDePlunk(), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${llave}`,
@@ -87,29 +158,44 @@ async function conPlunk(
 
     // Los errores vienen como { error: { message, code } }; si no, el texto.
     const crudo = await respuesta.text();
-    let motivo = String(respuesta.status);
+    let detalle = "";
     try {
       const json = JSON.parse(crudo) as {
         error?: { message?: string; code?: string };
       };
-      motivo = json.error?.message ?? json.error?.code ?? motivo;
+      detalle = json.error?.message ?? json.error?.code ?? "";
     } catch {
-      motivo = crudo.slice(0, 200) || motivo;
+      detalle = crudo.slice(0, 200);
     }
 
-    console.error("Plunk fallo:", respuesta.status, motivo);
-    return { enviado: false, motivo };
+    return {
+      enviado: false,
+      motivo: `${respuesta.status} ${detalle}`.trim(),
+      caerse: !CULPA_NUESTRA.has(respuesta.status),
+    };
   } catch (e) {
-    console.error("Plunk fallo:", e);
-    return { enviado: false, motivo: "excepcion" };
+    // Se acabó la espera, no hubo red, el dominio no resuelve: no contestó.
+    const como = e instanceof Error ? e.name : "error";
+    return { enviado: false, motivo: `no contestó (${como})`, caerse: true };
   }
 }
+
+/**
+ * Resend nombra sus errores. `validation_error` y los de dirección son del
+ * correo que le dimos; el resto —llave, cuota, dominio sin verificar— es de la
+ * cuenta o del servicio.
+ */
+const RESEND_CULPA_NUESTRA = new Set([
+  "validation_error",
+  "missing_required_field",
+  "invalid_attachment",
+]);
 
 async function conResend(
   llave: string,
   remitente: string | null,
   correo: Correo,
-): Promise<Resultado> {
+): Promise<Intento> {
   try {
     const cliente = new Resend(llave);
     const { error } = await cliente.emails.send({
@@ -119,14 +205,19 @@ async function conResend(
       html: correo.html,
       text: correo.text,
     });
+
     if (error) {
-      console.error("Resend fallo:", error);
-      return { enviado: false, motivo: error.message };
+      return {
+        enviado: false,
+        motivo: `${error.name}: ${error.message}`,
+        caerse: !RESEND_CULPA_NUESTRA.has(error.name),
+      };
     }
+
     return { enviado: true };
   } catch (e) {
-    console.error("Resend fallo:", e);
-    return { enviado: false, motivo: "excepcion" };
+    const como = e instanceof Error ? e.message : "error";
+    return { enviado: false, motivo: `no contestó (${como})`, caerse: true };
   }
 }
 

@@ -184,9 +184,20 @@ en `pruebas/amazon.test.ts`.
 
 ## El correo
 
-- `src/lib/mail.ts` manda por **Plunk** si hay `PLUNK_API_KEY`, y si no cae a
-  **Resend**. Así se cambia de proveedor moviendo variables en Vercel, sin tocar
-  código.
+- `src/lib/mail.ts` intenta con **Plunk** y, si Plunk no está, **se cae solo a
+  Resend**. No reintenta cuando el que falla dice que el correo va mal armado
+  (`400`, `422`): el otro contestaría lo mismo. Las pruebas están en
+  `pruebas/correo.test.ts`, con los dos proveedores de mentiras en localhost
+  (`PLUNK_API_URL` y `RESEND_BASE_URL`, que su SDK respeta).
+- **Cada proveedor manda desde su dominio verificado** y rechaza el remitente
+  del otro: Plunk `delibird.app`, Resend `email.delibird.app`. De ahí
+  `EMAIL_FROM_PLUNK` y `EMAIL_FROM_RESEND`; `EMAIL_FROM` es la de los dos
+  cuando no traen la suya. Si pones una sola, el respaldo falla justo cuando se
+  necesita.
+- El 23 de noviembre de 2026 Plunk contestó `500` a todo lo autenticado —hasta
+  su propio login— con la página de estado en verde. Nadie podía entrar a la
+  app, porque entrar *es* un correo. Por eso existe la caída automática: no
+  confíes en un solo proveedor para el acceso.
 - La dirección vieja de Plunk (`api.useplunk.com`) contesta **410**. La buena es
   `https://next-api.useplunk.com/v1/send`, que es la que trae el código; se puede
   apuntar a otra con `PLUNK_API_URL`.

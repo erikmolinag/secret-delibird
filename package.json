@@ -11,7 +11,7 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "test": "node --test \"pruebas/**/*.test.ts\"",
+    "test": "node --conditions=react-server --test \"pruebas/**/*.test.ts\"",
     "mail:preview": "node --conditions=react-server herramientas/vista-correos.ts"
   },
   "dependencies": {
