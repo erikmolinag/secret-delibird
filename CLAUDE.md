@@ -57,7 +57,13 @@ columna nueva antes de crearla en Neon, la página truena para todos. El orden e
    Sale con un nombre aleatorio (`0006_mean_naoko.sql`): renómbralo a algo que se
    entienda (`0006_cartas.sql`) y cambia también el `tag` en
    `drizzle/meta/_journal.json`.
-3. Lo aplicas en **local**.
+3. Lo aplicas en **local**. Ojo: la base local se armó con `db:push`, así que su
+   tabla `drizzle.__drizzle_migrations` está **vacía**. `npm run db:migrate`
+   contra local intenta desde la `0000`, choca con lo que ya existe y **se queda
+   callado**: dice "applying migrations..." y termina sin aplicar nada ni
+   avisar. Para local, corre el `.sql` nuevo a mano (partiéndolo por
+   `--> statement-breakpoint`) y verifica en `information_schema` que la tabla o
+   la columna aparecieron. En Neon sí está el registro y `db:migrate` funciona.
 4. Lo aplicas en **Neon** (con la cadena **directa**, la que no dice `-pooler`;
    el pooler se atraganta con algunos DDL):
    ```bash
