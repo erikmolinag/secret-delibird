@@ -6,7 +6,7 @@ import { refresh } from "next/cache";
 import { db, schema } from "@/db";
 import { requerirUsuario } from "@/lib/auth";
 import { aQuienLeRegala, participanteDelUsuario } from "@/lib/datos";
-import { crearMagicLink } from "@/lib/magic-link";
+import { crearEnlaceDuradero } from "@/lib/magic-link";
 import { LARGO_MAXIMO } from "@/lib/cartas";
 import { enviarCorreo, plantillaCarta } from "@/lib/mail";
 
@@ -80,12 +80,13 @@ export async function enviarCartaAccion(
   });
 
   if (!yaLeAvisamos) {
-    const url = await crearMagicLink(
+    const url = await crearEnlaceDuradero(
       asignado.receptor.email,
       `/e/${asignado.receptor.id}`,
     );
     await enviarCorreo({
       to: asignado.receptor.email,
+      tipo: "carta",
       ...plantillaCarta({ evento: mio.evento.name, url }),
     });
   }

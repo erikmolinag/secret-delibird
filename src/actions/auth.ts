@@ -45,7 +45,7 @@ export async function solicitarAccesoAccion(
   await anotarEnlacePorIp();
 
   const plantilla = plantillaMagicLink(url, VIGENCIA_MINUTOS);
-  const envio = await enviarCorreo({ to: email, ...plantilla });
+  const envio = await enviarCorreo({ to: email, tipo: "acceso", ...plantilla });
 
   if (!envio.enviado && envio.motivo !== "sin-api-key") {
     // El proveedor falló (dominio, cuota, red). Decirlo, en vez de mandar a

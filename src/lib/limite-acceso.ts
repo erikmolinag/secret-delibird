@@ -74,6 +74,10 @@ export async function revisarLimiteAcceso(email: string): Promise<LimiteAcceso> 
     .where(
       and(
         eq(schema.loginTokens.email, email),
+        // Solo los que esta persona pidió. Los duraderos los dispara quien
+        // organiza al invitar o al sortear, y no tienen por qué dejar a nadie
+        // sin poder entrar justo después de que le llegó su invitación.
+        eq(schema.loginTokens.reusable, false),
         gte(schema.loginTokens.createdAt, new Date(ahora - HORA)),
       ),
     )

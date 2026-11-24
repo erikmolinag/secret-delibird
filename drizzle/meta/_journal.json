@@ -57,6 +57,13 @@
       "when": 1795474525243,
       "tag": "0007_ajustes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1795485503077,
+      "tag": "0008_correo",
+      "breakpoints": true
     }
   ]
 }

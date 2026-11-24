@@ -11,6 +11,9 @@ import { nombreDesdeEmail } from "@/lib/utils";
 
 export const VIGENCIA_MINUTOS = 20;
 
+/** Lo que dura el enlace que va dentro de un correo nuestro: un mes. */
+export const VIGENCIA_AVISO_DIAS = 30;
+
 function hashear(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -30,20 +33,53 @@ export function urlBase() {
   return "http://localhost:3000";
 }
 
-/** Crea un magic link de un solo uso. Solo guardamos el hash del token. */
-export async function crearMagicLink(email: string, redirectTo?: string | null) {
+async function crear(
+  email: string,
+  redirectTo: string | null | undefined,
+  duracionMs: number,
+  reusable: boolean,
+) {
   const token = crypto.randomBytes(32).toString("base64url");
 
   await db.insert(schema.loginTokens).values({
     email,
     tokenHash: hashear(token),
     redirectTo: redirectTo ?? null,
-    expiresAt: new Date(Date.now() + VIGENCIA_MINUTOS * 60_000),
+    reusable,
+    expiresAt: new Date(Date.now() + duracionMs),
   });
 
   const url = new URL("/auth/verify", urlBase());
   url.searchParams.set("token", token);
   return url.toString();
+}
+
+/**
+ * El enlace de la pantalla de entrar: veinte minutos y un solo uso.
+ *
+ * Es corto a propósito, porque cualquiera lo puede disparar escribiendo el
+ * correo de otra persona. Solo guardamos el hash del token.
+ */
+export async function crearMagicLink(email: string, redirectTo?: string | null) {
+  return crear(email, redirectTo, VIGENCIA_MINUTOS * 60_000, false);
+}
+
+/**
+ * El enlace que va dentro de un correo que mandamos nosotros: la invitación, el
+ * aviso del sorteo, el de una lista que se movió, el de una carta.
+ *
+ * Dura un mes y sirve las veces que lo abran. Veinte minutos y un solo uso
+ * servían para la pantalla de entrar, pero aquí no: la gente abre el correo al
+ * otro día, o lo vuelve a buscar en el buzón la semana siguiente, y se topaba
+ * con un enlace muerto en un correo que nadie pidió.
+ *
+ * El costo es real y es a propósito: quien reenvíe ese correo le está dando a
+ * otro la entrada a su cuenta durante ese mes. Se aguanta porque estos enlaces
+ * los dispara quien organiza, a una lista de correos que él escribió, y no un
+ * desconocido escribiendo direcciones ajenas en una pantalla pública.
+ */
+export async function crearEnlaceDuradero(email: string, redirectTo?: string | null) {
+  return crear(email, redirectTo, VIGENCIA_AVISO_DIAS * 86_400_000, true);
 }
 
 type Resultado =
@@ -59,7 +95,8 @@ export async function consumirMagicLink(token: string): Promise<Resultado> {
     .limit(1);
 
   if (!fila) return { ok: false, motivo: "invalido" };
-  if (fila.usedAt) return { ok: false, motivo: "usado" };
+  // Los duraderos no se queman: se les anota el último uso y ya.
+  if (fila.usedAt && !fila.reusable) return { ok: false, motivo: "usado" };
   if (fila.expiresAt.getTime() < Date.now()) return { ok: false, motivo: "vencido" };
 
   await db

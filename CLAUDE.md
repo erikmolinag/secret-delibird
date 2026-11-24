@@ -175,6 +175,19 @@ consulta, pregúntate qué deja ver.
   agregaron veía el evento y se metía antes de que le avisaran. Quien organiza
   nunca se invita a sí mismo, de ahí la excepción; si la quitas, el organizador
   pierde su propia lista de deseos.
+- **Hay dos clases de magic link y no se parecen.** `crearMagicLink` es el de la
+  pantalla de entrar: veinte minutos y un solo uso, porque cualquiera lo puede
+  disparar escribiendo el correo de otro. `crearEnlaceDuradero` es el que va
+  dentro de un correo nuestro (invitación, sorteo, lista, carta): **treinta días
+  y se puede usar las veces que sea**, porque la gente abre esos correos al otro
+  día. El costo está asumido: quien reenvíe ese correo está regalando la entrada
+  a su cuenta durante ese mes. No uses el duradero en la pantalla de entrar.
+- **Borrar la cuenta borra también los renglones de invitado**, por cuenta y por
+  correo. Si solo se borrara la cuenta, el renglón quedaría con `user_id` en
+  null pero con el correo puesto, y como un evento es tuyo si coincide la cuenta
+  **o el correo**, la persona volvería a aparecer entera al registrarse otra
+  vez. Quien organiza algo no se puede borrar: su evento cuelga de su cuenta y
+  se llevaría por delante el intercambio de todos los demás.
 - **`/admin`** responde 404 a quien no esté en `ADMIN_EMAILS`, no "prohibido":
   para los demás no existe.
 - **`src/lib/og.ts`** resuelve el DNS antes de abrir un link y rechaza IPs
@@ -196,16 +209,25 @@ en `pruebas/amazon.test.ts`.
 
 ## El correo
 
-- `src/lib/mail.ts` intenta con **Plunk** y, si Plunk no está, **se cae solo a
-  Resend**. No reintenta cuando el que falla dice que el correo va mal armado
-  (`400`, `422`): el otro contestaría lo mismo. Las pruebas están en
-  `pruebas/correo.test.ts`, con los dos proveedores de mentiras en localhost
-  (`PLUNK_API_URL` y `RESEND_BASE_URL`, que su SDK respeta).
+- `src/lib/mail.ts` intenta con uno y, si no está, **se cae solo al otro**. No
+  reintenta cuando el que falla dice que el correo va mal armado (`400`, `422`):
+  el otro contestaría lo mismo. Las pruebas están en `pruebas/correo.test.ts`,
+  con los dos proveedores de mentiras en localhost (`PLUNK_API_URL` y
+  `RESEND_BASE_URL`, que su SDK respeta).
+- **El orden y los remitentes se eligen en `/admin`** y viven en `settings`; las
+  variables de entorno son el respaldo. Está así porque cambiar una variable en
+  Vercel obliga a redesplegar, y eso es justo lo que no se puede esperar cuando
+  el correo está caído.
 - **Cada proveedor manda desde su dominio verificado** y rechaza el remitente
-  del otro: Plunk `delibird.app`, Resend `email.delibird.app`. De ahí
-  `EMAIL_FROM_PLUNK` y `EMAIL_FROM_RESEND`; `EMAIL_FROM` es la de los dos
-  cuando no traen la suya. Si pones una sola, el respaldo falla justo cuando se
-  necesita.
+  del otro: Plunk `delibird.app`, Resend `email.delibird.app`. Si pones una sola
+  dirección para los dos, el respaldo falla justo cuando se necesita.
+- **`mail.ts` importa con rutas relativas y extensión** (`./enlaces.ts`,
+  `./proveedores.ts`) porque `node --test` no entiende el alias `@/`. Lo que
+  necesita la base (`@/db`, `@/lib/ajustes`) se carga con `import()` a demanda,
+  detrás de un `if (!process.env.DATABASE_URL)`. Si le pones un import normal de
+  `@/algo` arriba, `pruebas/correo.test.ts` deja de cargar entero.
+- **Cada envío queda anotado en `email_log`**, salga o no, y se ve en `/admin`.
+  Anotar nunca tumba un envío: va en try/catch. No se guarda el cuerpo.
 - El 23 de noviembre de 2026 Plunk contestó `500` a todo lo autenticado —hasta
   su propio login— con la página de estado en verde. Nadie podía entrar a la
   app, porque entrar *es* un correo. Por eso existe la caída automática: no

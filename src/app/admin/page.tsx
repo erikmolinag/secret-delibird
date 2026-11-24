@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { editarUsuarioAccion } from "@/actions/admin";
 import { AjusteAmazon } from "@/components/ajuste-amazon";
+import { AjusteCorreo } from "@/components/ajuste-correo";
 import { AvatarEntrenador } from "@/components/avatar";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Campo, Entrada, claseInput } from "@/components/ui/campo";
@@ -14,15 +15,18 @@ import {
   TarjetaEncabezado,
   TituloSeccion,
 } from "@/components/ui/tarjeta";
-import { codigoAmazon } from "@/lib/ajustes";
+import { ajustesDeCorreo, codigoAmazon } from "@/lib/ajustes";
 import { requerirAdmin } from "@/lib/auth";
 import { GRUPOS_ENTRENADORES } from "@/lib/avatares";
 import {
+  correosFallidosHoy,
   intercambiosParaAdmin,
   resumenAdmin,
+  ultimosCorreos,
   usuariosParaAdmin,
 } from "@/lib/datos-admin";
-import { formatearFecha, formatearFechaCorta } from "@/lib/utils";
+import { NOMBRE_PROVEEDOR, type Proveedor } from "@/lib/proveedores";
+import { cn, formatearFecha, formatearFechaCorta } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -35,12 +39,22 @@ export const instant = false;
 export default async function Admin() {
   await requerirAdmin();
 
-  const [resumen, intercambios, usuarios, amazon] = await Promise.all([
-    resumenAdmin(),
-    intercambiosParaAdmin(),
-    usuariosParaAdmin(),
-    codigoAmazon(),
-  ]);
+  const [resumen, intercambios, usuarios, amazon, correo, correos, fallidos] =
+    await Promise.all([
+      resumenAdmin(),
+      intercambiosParaAdmin(),
+      usuariosParaAdmin(),
+      codigoAmazon(),
+      ajustesDeCorreo(),
+      ultimosCorreos(),
+      correosFallidosHoy(),
+    ]);
+
+  // Las llaves viven en Vercel: aquí solo se dice si están, nunca su valor.
+  const llaves: Record<Proveedor, boolean> = {
+    plunk: !!process.env.PLUNK_API_KEY,
+    resend: !!process.env.RESEND_API_KEY,
+  };
 
   const datos = [
     {
@@ -115,6 +129,75 @@ export default async function Admin() {
           </p>
           <AjusteAmazon codigo={amazon} />
         </TarjetaCuerpo>
+      </Tarjeta>
+
+      <Tarjeta>
+        <TarjetaEncabezado>
+          <TituloSeccion>Correo</TituloSeccion>
+          <span className="text-sm text-gris">
+            Primero {NOMBRE_PROVEEDOR[correo.primero]}
+          </span>
+        </TarjetaEncabezado>
+        <TarjetaCuerpo>
+          <AjusteCorreo ajustes={correo} llaves={llaves} />
+        </TarjetaCuerpo>
+      </Tarjeta>
+
+      <Tarjeta>
+        <TarjetaEncabezado>
+          <TituloSeccion>Últimos correos</TituloSeccion>
+          <span
+            className={cn(
+              "text-sm",
+              fallidos > 0 ? "font-bold text-rojo-oscuro" : "text-gris",
+            )}
+          >
+            {fallidos === 0
+              ? "ninguno falló en 24 horas"
+              : fallidos === 1
+                ? "1 falló hoy"
+                : `${fallidos} fallaron hoy`}
+          </span>
+        </TarjetaEncabezado>
+
+        {correos.length === 0 ? (
+          <TarjetaCuerpo className="text-center text-sm text-gris">
+            Todavía no se manda ningún correo desde que existe esta bitácora.
+          </TarjetaCuerpo>
+        ) : (
+          <ul className="divide-y-[3px] divide-tinta">
+            {correos.map((envio) => (
+              <li
+                key={envio.id}
+                className={cn("px-4 py-3", envio.ok ? null : "bg-rojo-claro")}
+              >
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <Insignia tono={envio.ok ? "listo" : "alerta"}>
+                    {envio.ok ? (envio.provider ?? "salió") : "falló"}
+                  </Insignia>
+                  <span className="font-bold">{envio.toEmail}</span>
+                  {envio.kind ? (
+                    <span className="text-sm font-semibold text-gris">
+                      {envio.kind}
+                    </span>
+                  ) : null}
+                  <span className="ms-auto text-sm text-gris">
+                    {formatearFechaCorta(envio.createdAt)}
+                    {envio.ms === null ? "" : ` · ${(envio.ms / 1000).toFixed(1)}s`}
+                  </span>
+                </div>
+
+                <p className="text-sm text-gris">{envio.subject}</p>
+
+                {envio.detail ? (
+                  <p className="mt-1 break-words text-sm font-semibold text-rojo-oscuro">
+                    {envio.detail}
+                  </p>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
       </Tarjeta>
 
       <Tarjeta>

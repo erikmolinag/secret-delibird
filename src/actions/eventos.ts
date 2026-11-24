@@ -13,7 +13,7 @@ import {
   parsearInvitados,
   pokemonOcupados,
 } from "@/lib/datos";
-import { crearMagicLink } from "@/lib/magic-link";
+import { crearEnlaceDuradero } from "@/lib/magic-link";
 import { enviarCorreo, plantillaInvitacion } from "@/lib/mail";
 import { elegirPokemonParaEvento } from "@/lib/pokeapi";
 import {
@@ -209,7 +209,7 @@ export async function enviarInvitacionesAccion(datos: FormData) {
     : todos.filter((p) => !p.invitedAt && p.email !== normalizarEmail(usuario.email));
 
   for (const invitado of objetivo) {
-    const url = await crearMagicLink(invitado.email, `/e/${invitado.id}`);
+    const url = await crearEnlaceDuradero(invitado.email, `/e/${invitado.id}`);
     const plantilla = plantillaInvitacion({
       evento: evento.name,
       anfitrion: usuario.name ?? usuario.email,
@@ -222,7 +222,7 @@ export async function enviarInvitacionesAccion(datos: FormData) {
       mensaje: evento.message,
     });
 
-    await enviarCorreo({ to: invitado.email, ...plantilla });
+    await enviarCorreo({ to: invitado.email, tipo: "invitacion", ...plantilla });
 
     await db
       .update(schema.participants)

@@ -15,6 +15,8 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { after, beforeEach, describe, it } from "node:test";
 
+import { remitenteValido } from "../src/lib/proveedores.ts";
+
 type Falso = Awaited<ReturnType<typeof levantarFalso>>;
 
 /** Un proveedor de mentiras: contesta lo que le digan y guarda lo que recibió. */
@@ -85,6 +87,8 @@ beforeEach(() => {
   process.env.EMAIL_FROM = "Secret Delibird <comun@delibird.app>";
   delete process.env.EMAIL_FROM_PLUNK;
   delete process.env.EMAIL_FROM_RESEND;
+  delete process.env.EMAIL_PRIMERO;
+  delete process.env.DATABASE_URL;
 });
 
 describe("a quién le toca mandar el correo", () => {
@@ -167,6 +171,70 @@ describe("a quién le toca mandar el correo", () => {
     assert.deepEqual(salida, { enviado: true });
     assert.equal(plunk.recibidos.length, 0);
     assert.equal(resend.recibidos.length, 1);
+  });
+});
+
+describe("elegir quién va primero", () => {
+  it("con Resend elegido, Plunk ni se entera", async () => {
+    process.env.EMAIL_PRIMERO = "resend";
+
+    const salida = await enviarCorreo(CORREO);
+
+    assert.deepEqual(salida, { enviado: true });
+    assert.equal(resend.recibidos.length, 1);
+    assert.equal(plunk.recibidos.length, 0, "Plunk ya no es el primero");
+  });
+
+  it("el elegido también tiene respaldo, en el otro sentido", async () => {
+    process.env.EMAIL_PRIMERO = "resend";
+    resend.contestar(500, {
+      statusCode: 500,
+      name: "application_error",
+      message: "caido",
+    });
+
+    const salida = await enviarCorreo(CORREO);
+
+    assert.deepEqual(salida, { enviado: true });
+    assert.equal(plunk.recibidos.length, 1, "le tocaba a Plunk salvarlo");
+  });
+
+  it("una basura en la variable no cambia el orden", async () => {
+    process.env.EMAIL_PRIMERO = "mailchimp";
+
+    await enviarCorreo(CORREO);
+
+    assert.equal(plunk.recibidos.length, 1);
+  });
+});
+
+describe("validar el remitente", () => {
+  it("acepta las dos formas de escribirlo", () => {
+    for (const bueno of [
+      "delibird@delibird.app",
+      "Secret Delibird <delibird@email.delibird.app>",
+      "<a@b.co>",
+    ]) {
+      assert.equal(remitenteValido(bueno), true, bueno);
+    }
+  });
+
+  it("rechaza lo que no es una dirección", () => {
+    for (const malo of ["", "delibird", "delibird@", "@delibird.app", "a b@c.com"]) {
+      assert.equal(remitenteValido(malo), false, JSON.stringify(malo));
+    }
+  });
+
+  it("no deja colar cabeceras con un salto de línea", () => {
+    // Esto acaba dentro de una cabecera del correo: un \n de más y cualquiera
+    // agrega destinatarios que nadie puso.
+    for (const malo of [
+      "Delibird <a@b.co>\nBcc: otro@ajeno.com",
+      "Delibird <a@b.co>\r\nBcc: otro@ajeno.com",
+      'Deli"bird <a@b.co>',
+    ]) {
+      assert.equal(remitenteValido(malo), false, JSON.stringify(malo));
+    }
   });
 });
 

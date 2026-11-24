@@ -41,6 +41,12 @@ export const loginTokens = pgTable(
     tokenHash: text("token_hash").notNull().unique(),
     redirectTo: text("redirect_to"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    /**
+     * Los de entrar se queman al usarse; los de una invitación no. A quien lo
+     * invitaron le sirve el mismo correo las veces que lo abra, que es lo que
+     * uno espera de una invitación guardada en el buzón.
+     */
+    reusable: boolean("reusable").default(false).notNull(),
     usedAt: timestamp("used_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -256,6 +262,34 @@ export const settings = pgTable("settings", {
   value: text("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * Cada intento de envío, haya salido o no. Existe para poder contestar "¿le
+ * llegó el correo?" mirando, en vez de adivinar: cuando Plunk se cayó no había
+ * forma de saber a quién le había fallado qué sin los registros de Vercel.
+ *
+ * Guarda lo necesario para entender un envío, no el correo: el cuerpo no se
+ * copia aquí.
+ */
+export const emailLog = pgTable(
+  "email_log",
+  {
+    id: uuid(),
+    toEmail: text("to_email").notNull(),
+    subject: text("subject").notNull(),
+    /** De qué era: acceso, invitacion, sorteo, lista, carta. */
+    kind: text("kind"),
+    /** Con cuál salió al final. Null si no salió con ninguno. */
+    provider: text("provider"),
+    ok: boolean("ok").notNull(),
+    /** Lo que contestó cada proveedor que se intentó, en orden. */
+    detail: text("detail"),
+    /** Cuánto tardó el intento completo. */
+    ms: integer("ms"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("email_log_fecha_idx").on(t.createdAt)],
+);
 
 /** Bitacora del botón "revelar asignaciones". */
 export const revealLog = pgTable("reveal_log", {

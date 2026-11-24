@@ -120,10 +120,11 @@ Copia `.env.example` a `.env.local`:
 | `DATABASE_URL` | Postgres. Local: `postgres://delibird:delibird@localhost:5433/secret_delibird` |
 | `AUTH_SECRET` | Firma la cookie de sesión. `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"` |
 | `PLUNK_API_KEY` | Vacío en local. En producción, la llave `sk_...` de Plunk |
-| `RESEND_API_KEY` | La llave `re_...` de Resend. Es el respaldo: entra cuando Plunk no contesta |
+| `RESEND_API_KEY` | La llave `re_...` de Resend. El que no va primero queda de respaldo |
 | `EMAIL_FROM` | `Secret Delibird <delibird@tudominio.com>`. La usan los dos si no traen la suya |
-| `EMAIL_FROM_PLUNK` | Opcional. La dirección del dominio verificado en Plunk |
-| `EMAIL_FROM_RESEND` | Opcional. La del dominio verificado en Resend (aquí, `email.delibird.app`) |
+| `EMAIL_FROM_PLUNK` | Respaldo de lo que diga `/admin`: la dirección del dominio verificado en Plunk |
+| `EMAIL_FROM_RESEND` | Respaldo de lo que diga `/admin`: la del dominio verificado en Resend |
+| `EMAIL_PRIMERO` | Respaldo de lo que diga `/admin`: `plunk` o `resend`. Sin esto, `plunk` |
 | `APP_URL` | La URL pública. Es la base de los magic links |
 | `ADMIN_EMAILS` | Correos (separados por coma) que pueden entrar a `/admin`. Vacía, nadie entra |
 
@@ -187,17 +188,35 @@ el código por omisión; si algún día la vuelven a mover, se cambia con
 
 ### Los dos proveedores a la vez
 
-`src/lib/mail.ts` intenta con Plunk y, si Plunk no está —caído, sin cuota, con
-la llave muerta—, se cae solo a Resend. Si el que falla contesta que el correo
-va mal armado (un `422`, una dirección inválida), ahí no reintenta: el otro
-diría lo mismo.
+`src/lib/mail.ts` intenta con uno y, si no está —caído, sin cuota, con la llave
+muerta—, se cae solo al otro. Si el que falla contesta que el correo va mal
+armado (un `422`, una dirección inválida), ahí no reintenta: el otro diría lo
+mismo.
+
+**Cuál va primero y desde qué dirección manda cada uno se elige en `/admin`**,
+en la tarjeta *Correo*. Eso vive en la tabla `settings` y no en Vercel porque
+cambiar una variable allá obliga a volver a desplegar, y justo cuando el correo
+está fallando es cuando no se puede esperar un deploy. Las variables
+(`EMAIL_PRIMERO`, `EMAIL_FROM_PLUNK`, `EMAIL_FROM_RESEND`, `EMAIL_FROM`) quedan
+de respaldo: valen mientras no haya nada guardado en el panel, y también si la
+base no contesta.
 
 Para que la caída sirva, las dos llaves tienen que estar puestas en Vercel al
 mismo tiempo. Y como cada proveedor manda desde el dominio que tiene verificado
 —Plunk desde `delibird.app`, Resend desde `email.delibird.app`—, cada uno
-necesita su propia dirección en `EMAIL_FROM_PLUNK` y `EMAIL_FROM_RESEND`. Con
-una sola `EMAIL_FROM` el respaldo se cae en el momento de usarse, porque Resend
-rechaza un remitente que no es de su dominio.
+necesita su propia dirección. Con una sola para los dos, el respaldo se cae en
+el momento de usarse, porque el otro rechaza un remitente que no es de su
+dominio. Eso ya pasó.
+
+### La bitácora de correos
+
+Cada intento queda anotado en `email_log`, salga o no, y se ve en `/admin` bajo
+*Últimos correos*: a quién, de qué era, con cuál salió, cuánto tardó y —cuando
+falló— lo que contestó cada proveedor. No guarda el cuerpo del correo.
+
+Existe porque cuando Plunk se cayó no había forma de contestar "¿le llegó?" sin
+ir a los registros de Vercel. El encabezado de la tarjeta dice cuántos fallaron
+en las últimas 24 horas, que es el número que importa de un vistazo.
 
 **Esto no es hipotético.** El 23 de noviembre de 2026 Plunk empezó a contestar
 `500 INTERNAL_SERVER_ERROR` a todo lo que llevara autenticación —su propio

@@ -3,9 +3,31 @@ import "server-only";
 import { Resend } from "resend";
 
 import { enlaceCalendario, enlaceMapa } from "./enlaces.ts";
+import {
+  ajustesDelEntorno,
+  NOMBRE_PROVEEDOR,
+  type AjustesCorreo,
+  type Proveedor,
+} from "./proveedores.ts";
 
-type Correo = { to: string; subject: string; html: string; text: string };
+type Correo = {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+  /** De qué es, para poder filtrarlo en el panel: acceso, invitacion, ... */
+  tipo?: string;
+};
 type Resultado = { enviado: true } | { enviado: false; motivo: string };
+
+/** Lo que pasó con un envío completo, ya contando los dos proveedores. */
+type Salida = {
+  enviado: boolean;
+  /** Con cuál salió. Null si no salió. */
+  proveedor: Proveedor | null;
+  /** Lo que contestó cada proveedor que falló, en orden. */
+  detalle: string | null;
+};
 
 /**
  * Lo que contesta un proveedor. `caerse` dice si vale la pena intentar con el
@@ -37,43 +59,54 @@ function partirRemitente(remitente: string) {
 }
 
 /**
- * Cada proveedor manda desde el dominio que tiene verificado —Plunk desde
- * `delibird.app`, Resend desde `email.delibird.app`— y usar el remitente del
- * otro hace que rechace el correo. Por eso cada uno puede traer su propia
- * dirección, y `EMAIL_FROM` queda como la de siempre para los dos.
- */
-function remitente(propio: string | undefined) {
-  return propio?.trim() || process.env.EMAIL_FROM?.trim() || null;
-}
-
-/**
- * Manda el correo. Intenta con Plunk y, si Plunk no está —caído, sin cuota, con
- * la llave muerta—, se cae a Resend; con una sola llave usa esa nomás. Lo que
- * importa es que una caída del proveedor no deje a nadie sin poder entrar: el
- * acceso a la app es un correo.
+ * Manda el correo y lo anota en la bitácora, salga o no.
+ *
+ * El orden de los proveedores se elige desde el panel de admin; el segundo
+ * queda de respaldo y entra cuando el primero no está —caído, sin cuota, con la
+ * llave muerta—. Con una sola llave usa esa nomás. Lo que importa es que una
+ * caída del proveedor no deje a nadie sin poder entrar: el acceso a la app es
+ * un correo, y eso ya pasó.
  *
  * Sin ninguna de las dos llaves, que es como corre en desarrollo, lo escribe en
  * la consola y avisa que no se envió.
  */
 export async function enviarCorreo(correo: Correo): Promise<Resultado> {
-  const plunk = process.env.PLUNK_API_KEY;
-  const resend = process.env.RESEND_API_KEY;
+  const empezo = Date.now();
+  const salida = await intentarEnvio(correo);
+  await anotarEnvio(correo, salida, Date.now() - empezo);
 
-  const proveedores: { nombre: string; enviar: () => Promise<Intento> }[] = [];
-  if (plunk) {
-    proveedores.push({
-      nombre: "Plunk",
-      enviar: () =>
-        conPlunk(plunk, remitente(process.env.EMAIL_FROM_PLUNK), correo),
-    });
-  }
-  if (resend) {
-    proveedores.push({
-      nombre: "Resend",
-      enviar: () =>
-        conResend(resend, remitente(process.env.EMAIL_FROM_RESEND), correo),
-    });
-  }
+  if (salida.enviado) return { enviado: true };
+  return { enviado: false, motivo: salida.detalle ?? "sin-api-key" };
+}
+
+/**
+ * Los ajustes guardados en el panel, si hay base. Se carga a demanda para que
+ * este módulo se pueda probar sin Postgres y sin el alias `@/`.
+ */
+async function ajustesVigentes(): Promise<AjustesCorreo> {
+  if (!process.env.DATABASE_URL) return ajustesDelEntorno();
+
+  const { ajustesDeCorreo } = await import("@/lib/ajustes");
+  return ajustesDeCorreo();
+}
+
+async function intentarEnvio(correo: Correo): Promise<Salida> {
+  const llaves: Record<Proveedor, string | undefined> = {
+    plunk: process.env.PLUNK_API_KEY,
+    resend: process.env.RESEND_API_KEY,
+  };
+
+  const ajustes = await ajustesVigentes();
+  const remitentes: Record<Proveedor, string | null> = {
+    plunk: ajustes.fromPlunk,
+    resend: ajustes.fromResend,
+  };
+
+  // El elegido primero y el otro detrás, de respaldo.
+  const orden: Proveedor[] =
+    ajustes.primero === "resend" ? ["resend", "plunk"] : ["plunk", "resend"];
+
+  const proveedores = orden.filter((nombre) => llaves[nombre]);
 
   if (proveedores.length === 0) {
     console.log(`
@@ -84,34 +117,66 @@ Asunto: ${correo.subject}
 ${correo.text}
 ===
 `);
-    return { enviado: false, motivo: "sin-api-key" };
+    return { enviado: false, proveedor: null, detalle: null };
   }
 
   const motivos: string[] = [];
 
-  for (const [lugar, proveedor] of proveedores.entries()) {
-    const intento = await proveedor.enviar();
+  for (const [lugar, nombre] of proveedores.entries()) {
+    const llave = llaves[nombre] as string;
+    const intento =
+      nombre === "plunk"
+        ? await conPlunk(llave, remitentes.plunk, correo)
+        : await conResend(llave, remitentes.resend, correo);
 
     if (intento.enviado) {
-      // Que quede en el registro cuando salió por el segundo: es la pista de
-      // que el primero anda mal, aunque nadie se haya quedado sin su correo.
+      // Que quede anotado cuando salió por el de respaldo: es la pista de que
+      // el primero anda mal, aunque nadie se haya quedado sin su correo.
+      const detalle = motivos.length ? motivos.join(" / ") : null;
       if (lugar > 0) {
         console.warn(
-          `Correo enviado con ${proveedor.nombre} después de ${motivos.join(", ")}`,
+          `Correo enviado con ${NOMBRE_PROVEEDOR[nombre]} después de ${detalle}`,
         );
       }
-      return { enviado: true };
+      return { enviado: true, proveedor: nombre, detalle };
     }
 
-    console.error(`${proveedor.nombre} no envió:`, intento.motivo);
-    motivos.push(`${proveedor.nombre}: ${intento.motivo}`);
+    console.error(`${NOMBRE_PROVEEDOR[nombre]} no envió:`, intento.motivo);
+    motivos.push(`${NOMBRE_PROVEEDOR[nombre]}: ${intento.motivo}`);
 
     // El correo es el que está mal, no el proveedor: el siguiente diría lo
     // mismo y mandarlo otra vez nomás tarda.
     if (!intento.caerse) break;
   }
 
-  return { enviado: false, motivo: motivos.join(" / ") };
+  return { enviado: false, proveedor: null, detalle: motivos.join(" / ") };
+}
+
+/**
+ * Deja constancia del intento. Nunca tumba un envío: si la bitácora falla, el
+ * correo ya salió y eso es lo que importaba.
+ *
+ * No guarda el cuerpo del correo. Lo que hace falta para contestar "¿le llegó?"
+ * es a quién, de qué era, con cuál salió y qué contestó el que falló.
+ */
+async function anotarEnvio(correo: Correo, salida: Salida, ms: number) {
+  if (!process.env.DATABASE_URL) return;
+
+  try {
+    const { db, schema } = await import("@/db");
+
+    await db.insert(schema.emailLog).values({
+      toEmail: correo.to,
+      subject: correo.subject,
+      kind: correo.tipo ?? null,
+      provider: salida.proveedor,
+      ok: salida.enviado,
+      detail: salida.detalle ?? (salida.enviado ? null : "sin llave de correo"),
+      ms,
+    });
+  } catch (e) {
+    console.error("No se pudo anotar el envío en la bitácora:", e);
+  }
 }
 
 /**

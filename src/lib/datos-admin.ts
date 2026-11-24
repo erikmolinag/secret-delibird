@@ -106,3 +106,25 @@ export async function intercambioParaAdmin(eventId: string) {
     .limit(1);
   return fila ?? null;
 }
+
+/**
+ * Los últimos correos que se intentaron, para el panel. Se traen los más
+ * recientes y ya: la bitácora sirve para contestar "¿le llegó?" el mismo día,
+ * no para hacer estadística.
+ */
+export async function ultimosCorreos(limite = 80) {
+  return db
+    .select()
+    .from(schema.emailLog)
+    .orderBy(desc(schema.emailLog.createdAt))
+    .limit(limite);
+}
+
+/** Cuántos fallaron en el último día. Es el número que importa de un vistazo. */
+export async function correosFallidosHoy() {
+  const ayer = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  return db.$count(
+    schema.emailLog,
+    sql`${schema.emailLog.ok} = false and ${schema.emailLog.createdAt} >= ${ayer}`,
+  );
+}

@@ -6,7 +6,7 @@ import { refresh } from "next/cache";
 import { db, schema } from "@/db";
 import { requerirUsuario } from "@/lib/auth";
 import { participanteDelUsuario, quienLeRegalaA } from "@/lib/datos";
-import { crearMagicLink } from "@/lib/magic-link";
+import { crearEnlaceDuradero } from "@/lib/magic-link";
 import { enviarCorreo, plantillaListaActualizada } from "@/lib/mail";
 import { obtenerPreview, type Preview } from "@/lib/og";
 
@@ -46,9 +46,10 @@ async function avisarAQuienTeRegala(participantId: string) {
     .limit(1);
   if (!evento) return;
 
-  const url = await crearMagicLink(quienDa.email, `/e/${quienDa.id}`);
+  const url = await crearEnlaceDuradero(quienDa.email, `/e/${quienDa.id}`);
   await enviarCorreo({
     to: quienDa.email,
+    tipo: "lista",
     ...plantillaListaActualizada({ evento: evento.name, url }),
   });
 

@@ -4,10 +4,17 @@ import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 
 import { db, schema } from "@/db";
-import { CLAVE_AMAZON, guardarAjuste } from "@/lib/ajustes";
+import {
+  CLAVE_AMAZON,
+  CLAVE_FROM_PLUNK,
+  CLAVE_FROM_RESEND,
+  CLAVE_PRIMERO,
+  guardarAjuste,
+} from "@/lib/ajustes";
 import { codigoAmazonValido } from "@/lib/amazon";
 import { requerirAdmin } from "@/lib/auth";
 import { ENTRENADORES } from "@/lib/avatares";
+import { esProveedor, remitenteValido } from "@/lib/proveedores";
 
 function texto(datos: FormData, campo: string) {
   const valor = datos.get(campo);
@@ -63,6 +70,49 @@ export async function guardarCodigoAmazonAccion(
   }
 
   await guardarAjuste(CLAVE_AMAZON, valor);
+  refresh();
+
+  return { ok: true, guardados: (previo.guardados ?? 0) + 1 };
+}
+
+/**
+ * Cómo sale el correo: con cuál proveedor se intenta primero y desde qué
+ * dirección manda cada uno.
+ *
+ * Esto se guarda en la base, no en Vercel, para poder moverlo en caliente:
+ * cuando Plunk se cayó hubo que cambiar variables y volver a desplegar, y
+ * mientras tanto nadie podía entrar.
+ */
+export async function guardarCorreoAccion(
+  previo: EstadoAjuste,
+  datos: FormData,
+): Promise<EstadoAjuste> {
+  await requerirAdmin();
+
+  const primero = texto(datos, "primero");
+  if (!primero || !esProveedor(primero)) {
+    return { error: "Elige Plunk o Resend.", guardados: previo.guardados };
+  }
+
+  const fromPlunk = texto(datos, "fromPlunk");
+  const fromResend = texto(datos, "fromResend");
+
+  for (const direccion of [fromPlunk, fromResend]) {
+    if (direccion && !remitenteValido(direccion)) {
+      return {
+        error:
+          "El remitente se escribe así: Secret Delibird <delibird@tudominio.com>, o nomás la dirección.",
+        guardados: previo.guardados,
+      };
+    }
+  }
+
+  await Promise.all([
+    guardarAjuste(CLAVE_PRIMERO, primero),
+    guardarAjuste(CLAVE_FROM_PLUNK, fromPlunk),
+    guardarAjuste(CLAVE_FROM_RESEND, fromResend),
+  ]);
+
   refresh();
 
   return { ok: true, guardados: (previo.guardados ?? 0) + 1 };

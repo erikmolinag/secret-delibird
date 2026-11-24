@@ -11,7 +11,7 @@ import {
   jugadoresDelEvento,
   reglasDelEvento,
 } from "@/lib/datos";
-import { crearMagicLink } from "@/lib/magic-link";
+import { crearEnlaceDuradero } from "@/lib/magic-link";
 import { enviarCorreo, plantillaSorteo } from "@/lib/mail";
 import { sortear, type ReglaSorteo } from "@/lib/sorteo";
 import {
@@ -160,7 +160,7 @@ export async function sortearAccion(datos: FormData) {
 
     const primerCorreo = !quienDa.invitedAt;
 
-    const url = await crearMagicLink(quienDa.email, `/e/${quienDa.id}`);
+    const url = await crearEnlaceDuradero(quienDa.email, `/e/${quienDa.id}`);
     const plantilla = plantillaSorteo({
       evento: evento.name,
       url,
@@ -172,7 +172,7 @@ export async function sortearAccion(datos: FormData) {
       mensaje: primerCorreo ? evento.message : null,
     });
 
-    await enviarCorreo({ to: quienDa.email, ...plantilla });
+    await enviarCorreo({ to: quienDa.email, tipo: "sorteo", ...plantilla });
 
     if (primerCorreo) {
       await db
