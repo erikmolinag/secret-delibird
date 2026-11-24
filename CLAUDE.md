@@ -191,9 +191,23 @@ consulta, pregúntate qué deja ver.
   huellas tampoco se acumulan.
 - **Los textos legales viven en `settings`** (`aviso_privacidad`, `terminos`) y
   se editan en `/admin`. Si están vacíos, `src/lib/legales.ts` tiene los de
-  arranque, así que las páginas nunca salen en blanco. `TextoLegal` entiende
-  `## `, `- ` y línea en blanco, y **no interpreta HTML a propósito**: es una
-  página pública alimentada por un campo de texto.
+  arranque, así que las páginas nunca salen en blanco; y si lo que guardas es
+  idéntico al de arranque, se guarda null en vez de una copia. El formato lo
+  entiende `src/lib/texto-rico.ts` (`##`, `###`, `- `, `**negritas**`,
+  `*cursivas*`, `[texto](url)`), que es puro y tiene pruebas. **Nunca se arma
+  HTML con eso**: son páginas públicas alimentadas por un campo de texto, y
+  `dangerouslySetInnerHTML` ahí no tiene por qué existir. Los enlaces que no son
+  `http(s)` se quedan como texto.
+- **Un `textarea` manda los saltos como `\r\n`, no `\n`.** Costó un bug en
+  producción: el separador de párrafos buscaba `\n{2,}`, con el `\r` en medio no
+  encontraba nada y el documento entero salía como un solo bloque, así que al
+  guardar un texto legal el otro se quedaba sin formato. Se normaliza al guardar
+  **y** al pintar (`normalizarSaltos`), lo segundo para que lo que ya se guardó
+  roto se vea bien sin migrar nada.
+- **Para devolver el cursor a un campo controlado, usa un efecto, no
+  `requestAnimationFrame`.** Los botones de formato del editor cambian el texto
+  y luego reponen la selección; con `requestAnimationFrame` el callback llegaba
+  antes del repintado de React y la selección acababa al final del campo.
 - **Hay dos clases de magic link y no se parecen.** `crearMagicLink` es el de la
   pantalla de entrar: veinte minutos y un solo uso, porque cualquiera lo puede
   disparar escribiendo el correo de otro. `crearEnlaceDuradero` es el que va

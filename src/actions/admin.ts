@@ -14,8 +14,14 @@ import {
 import { codigoAmazonValido } from "@/lib/amazon";
 import { requerirAdmin } from "@/lib/auth";
 import { ENTRENADORES } from "@/lib/avatares";
-import { CLAVE_PRIVACIDAD, CLAVE_TERMINOS } from "@/lib/legales";
+import {
+  CLAVE_PRIVACIDAD,
+  CLAVE_TERMINOS,
+  PRIVACIDAD_POR_OMISION,
+  TERMINOS_POR_OMISION,
+} from "@/lib/legales";
 import { esProveedor, remitenteValido } from "@/lib/proveedores";
+import { normalizarSaltos } from "@/lib/texto-rico";
 
 function texto(datos: FormData, campo: string) {
   const valor = datos.get(campo);
@@ -80,6 +86,23 @@ export async function guardarCodigoAmazonAccion(
 const TOPE_LEGAL = 40_000;
 
 /**
+ * Saca un texto legal del formulario, ya con los saltos arreglados.
+ *
+ * Dos cosas pasan aquí. Una: los `textarea` mandan `\r\n` y el formato se
+ * parte en dos saltos seguidos, así que sin normalizar el texto se guarda y se
+ * pinta como un solo bloque —así se rompía el campo que no se tocaba al
+ * guardar el otro—. Dos: si quedó idéntico al de arranque se guarda null, para
+ * no copiar a la base un texto que ya estaba en el código.
+ */
+function textoLegal(datos: FormData, campo: string, porOmision: string) {
+  const valor = texto(datos, campo);
+  if (!valor) return null;
+
+  const limpio = normalizarSaltos(valor).trim();
+  return limpio === normalizarSaltos(porOmision).trim() ? null : limpio;
+}
+
+/**
  * El aviso de privacidad y los términos. Se guardan en `settings`; mientras
  * estén vacíos, las páginas públicas enseñan los textos de arranque que vienen
  * en `src/lib/legales.ts`.
@@ -90,8 +113,8 @@ export async function guardarLegalesAccion(
 ): Promise<EstadoAjuste> {
   await requerirAdmin();
 
-  const privacidad = texto(datos, "privacidad");
-  const condiciones = texto(datos, "terminos");
+  const privacidad = textoLegal(datos, "privacidad", PRIVACIDAD_POR_OMISION);
+  const condiciones = textoLegal(datos, "terminos", TERMINOS_POR_OMISION);
 
   if ((privacidad?.length ?? 0) > TOPE_LEGAL || (condiciones?.length ?? 0) > TOPE_LEGAL) {
     return {

@@ -4,14 +4,16 @@ import { Check, TriangleAlert } from "lucide-react";
 import { useActionState, useState } from "react";
 
 import { guardarLegalesAccion, type EstadoAjuste } from "@/actions/admin";
+import { EditorTexto } from "@/components/editor-texto";
+import { Campo } from "@/components/ui/campo";
 import { BotonEnvio } from "@/components/ui/boton-envio";
-import { AreaTexto, Campo } from "@/components/ui/campo";
 
 const INICIAL: EstadoAjuste = {};
 
 const PISTA =
-  "Una línea con ## adelante es un título, una con - adelante es una viñeta, " +
-  "y una línea en blanco separa párrafos. No se interpreta HTML.";
+  "Los botones escriben las marcas por ti: **negritas**, *cursivas*, " +
+  "## título, - viñeta, [texto](https://enlace). Una línea en blanco separa " +
+  "párrafos. No se interpreta HTML.";
 
 /**
  * El aviso de privacidad y los términos, editables sin tocar código ni
@@ -84,25 +86,16 @@ function Campos({
   return (
     <div className="space-y-4">
       <Campo etiqueta="Aviso de privacidad" htmlFor="privacidad" pista={PISTA}>
-        <AreaTexto
+        <EditorTexto
           id="privacidad"
           name="privacidad"
-          value={uno}
-          onChange={(e) => setUno(e.target.value)}
-          rows={14}
-          spellCheck={false}
+          valor={uno}
+          alCambiar={setUno}
         />
       </Campo>
 
       <Campo etiqueta="Términos de uso" htmlFor="terminos" pista={PISTA}>
-        <AreaTexto
-          id="terminos"
-          name="terminos"
-          value={dos}
-          onChange={(e) => setDos(e.target.value)}
-          rows={14}
-          spellCheck={false}
-        />
+        <EditorTexto id="terminos" name="terminos" valor={dos} alCambiar={setDos} />
       </Campo>
     </div>
   );
