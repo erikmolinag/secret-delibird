@@ -181,6 +181,18 @@ consulta, pregúntate qué deja ver.
   agregaron veía el evento y se metía antes de que le avisaran. Quien organiza
   nunca se invita a sí mismo, de ahí la excepción; si la quitas, el organizador
   pierde su propia lista de deseos.
+- **La pantalla de entrar trae captcha** (Cloudflare Turnstile). Tres cosas que
+  no son obvias: (1) **las dos llaves o ninguna** —con `TURNSTILE_SITE_KEY` y
+  `TURNSTILE_SECRET_KEY` puestas se prende, sin ellas no se pinta ni se revisa
+  nada, que es como corre en local—; (2) **si Cloudflare no contesta, se deja
+  pasar**, a propósito, por la lección de Plunk: un tercero caído no tiene por
+  qué dejar a nadie fuera de su intercambio, y los topes por correo y por IP
+  siguen en pie; un rechazo explícito sí se respeta; (3) **un token sirve una
+  sola vez**, así que el widget se pinta con `render=explicit` y se reinicia
+  cuando el intento falla (de ahí `intentos` en `EstadoAcceso`). Sin eso, el
+  segundo intento se rechaza siempre y nadie entiende por qué.
+- Para probarlo sin cuenta de Cloudflare, sus llaves de prueba sirven desde
+  localhost y están anotadas en `.env.example`.
 - **Los dos topes de la pantalla de entrar viven en `login_tokens`.** El de por
   correo (5/hora, 1/minuto) siempre estuvo ahí; el de por IP vivía en un `Map`
   en memoria y en Vercel eso no frenaba nada, porque cada instancia tenía el

@@ -40,7 +40,7 @@ export type LimiteAcceso =
   | { permitido: false; motivo: "espera"; segundos: number }
   | { permitido: false; motivo: "correo" | "ip" };
 
-async function ipDelVisitante() {
+export async function ipDelVisitante() {
   const cabeceras = await headers();
   const reenviada = cabeceras.get("x-forwarded-for")?.split(",")[0]?.trim();
   return reenviada || cabeceras.get("x-real-ip") || null;

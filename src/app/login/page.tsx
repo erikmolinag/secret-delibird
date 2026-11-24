@@ -5,6 +5,7 @@ import { FormularioAcceso } from "@/components/formulario-acceso";
 import { Tarjeta, TarjetaCuerpo } from "@/components/ui/tarjeta";
 import { usuarioActual } from "@/lib/auth";
 import { DELIBIRD_ID, spritePokemon } from "@/lib/pokemon";
+import { claveTurnstile } from "@/lib/turnstile";
 
 export const metadata: Metadata = { title: "Entrar" };
 
@@ -48,7 +49,7 @@ export default async function Entrar({
 
       <Tarjeta>
         <TarjetaCuerpo>
-          <FormularioAcceso redirectTo={redirectTo} />
+          <FormularioAcceso redirectTo={redirectTo} claveTurnstile={claveTurnstile()} />
         </TarjetaCuerpo>
       </Tarjeta>
     </div>

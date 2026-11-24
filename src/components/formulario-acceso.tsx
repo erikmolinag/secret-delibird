@@ -4,12 +4,20 @@ import { Mail } from "lucide-react";
 import { useActionState } from "react";
 
 import { solicitarAccesoAccion, type EstadoAcceso } from "@/actions/auth";
+import { Turnstile } from "@/components/turnstile";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { Campo, Entrada } from "@/components/ui/campo";
 
 const INICIAL: EstadoAcceso = {};
 
-export function FormularioAcceso({ redirectTo }: { redirectTo?: string }) {
+export function FormularioAcceso({
+  redirectTo,
+  claveTurnstile,
+}: {
+  redirectTo?: string;
+  /** Null cuando no hay captcha configurado: en local, por ejemplo. */
+  claveTurnstile: string | null;
+}) {
   const [estado, accion] = useActionState(solicitarAccesoAccion, INICIAL);
 
   if (estado.ok) {
@@ -58,6 +66,10 @@ export function FormularioAcceso({ redirectTo }: { redirectTo?: string }) {
           placeholder="tu@correo.com"
         />
       </Campo>
+
+      {claveTurnstile ? (
+        <Turnstile clave={claveTurnstile} intentos={estado.intentos ?? 0} />
+      ) : null}
 
       {estado.error ? (
         <p className="rounded-2xl border-[3px] border-tinta bg-rojo-claro px-4 py-2.5 text-sm text-rojo-oscuro">

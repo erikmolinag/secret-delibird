@@ -125,6 +125,8 @@ Copia `.env.example` a `.env.local`:
 | `EMAIL_FROM_PLUNK` | Respaldo de lo que diga `/admin`: la dirección del dominio verificado en Plunk |
 | `EMAIL_FROM_RESEND` | Respaldo de lo que diga `/admin`: la del dominio verificado en Resend |
 | `EMAIL_PRIMERO` | Respaldo de lo que diga `/admin`: `plunk` o `resend`. Sin esto, `plunk` |
+| `TURNSTILE_SITE_KEY` | La llave pública del captcha. Vacía en local: sin captcha |
+| `TURNSTILE_SECRET_KEY` | La secreta del captcha. Las dos o ninguna |
 | `APP_URL` | La URL pública. Es la base de los magic links |
 | `ADMIN_EMAILS` | Correos (separados por coma) que pueden entrar a `/admin`. Vacía, nadie entra |
 
@@ -207,6 +209,25 @@ mismo tiempo. Y como cada proveedor manda desde el dominio que tiene verificado
 necesita su propia dirección. Con una sola para los dos, el respaldo se cae en
 el momento de usarse, porque el otro rechaza un remitente que no es de su
 dominio. Eso ya pasó.
+
+### El captcha de la pantalla de entrar
+
+Cada enlace que alguien pide es un correo que sale y se paga, así que la
+pantalla de entrada trae **Cloudflare Turnstile**. Los topes de
+`src/lib/limite-acceso.ts` frenan el volumen; el captcha frena que sea
+automático.
+
+Para prenderlo: en el panel de Cloudflare, Turnstile → agregar widget, poner el
+dominio, y copiar las dos llaves a Vercel (`TURNSTILE_SITE_KEY` y
+`TURNSTILE_SECRET_KEY`). Las dos o ninguna: con media configuración no se
+prende. Después, redesplegar.
+
+Si Cloudflare no contesta, **se deja pasar**. Es a propósito: un tercero caído
+no tiene por qué dejar a nadie sin poder entrar, y los topes por correo y por IP
+siguen en pie. Un rechazo explícito de Cloudflare sí se respeta.
+
+Para probarlo sin cuenta, Cloudflare publica llaves de prueba que sirven desde
+localhost; están anotadas en `.env.example`.
 
 ### La bitácora de correos
 
