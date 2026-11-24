@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { cerrarSesionAccion } from "@/actions/auth";
 import { actualizarPerfilAccion } from "@/actions/perfil";
 import { Estrella } from "@/components/adornos";
+import { BorrarCuenta } from "@/components/borrar-cuenta";
 import { SelectorEntrenador } from "@/components/selector-entrenador";
 import { Boton, BotonLink } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
@@ -15,7 +16,11 @@ import {
   TituloSeccion,
 } from "@/components/ui/tarjeta";
 import { esAdmin, requerirUsuario } from "@/lib/auth";
-import { nombreDeInvitacion } from "@/lib/datos";
+import {
+  eventosDelUsuario,
+  nombreDeInvitacion,
+  participacionesDelUsuario,
+} from "@/lib/datos";
 
 export const metadata: Metadata = { title: "Mi perfil" };
 
@@ -36,6 +41,12 @@ export default async function Perfil({
   // nombre con el que la invitaron, no uno adivinado de su correo.
   const sugerido = bienvenida ? await nombreDeInvitacion(usuario.email) : null;
   const destino = siguiente?.startsWith("/") ? siguiente : null;
+
+  // Para la zona de borrar la cuenta: lo que organiza (que la bloquea) y los
+  // intercambios de los que se saldría. Durante la bienvenida no hay nada que
+  // borrar todavía, así que ni se pregunta.
+  const organizados = bienvenida ? [] : await eventosDelUsuario(usuario.id);
+  const participaciones = bienvenida ? [] : await participacionesDelUsuario(usuario);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -114,6 +125,15 @@ export default async function Perfil({
             </Boton>
           </form>
         </div>
+      ) : null}
+
+      {!bienvenida ? (
+        <BorrarCuenta
+          organiza={organizados.map((evento) => evento.name)}
+          intercambios={participaciones
+            .filter((p) => p.evento.organizerId !== usuario.id)
+            .map((p) => p.evento.name)}
+        />
       ) : null}
     </div>
   );
