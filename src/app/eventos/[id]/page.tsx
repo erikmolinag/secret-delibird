@@ -50,6 +50,7 @@ import {
   listasDelEvento,
   reglasDelEvento,
 } from "@/lib/datos";
+import { BotonCalendario } from "@/components/boton-calendario";
 import { enlaceMapa } from "@/lib/enlaces";
 import { analizar, type ReglaSorteo } from "@/lib/sorteo";
 import {
@@ -158,6 +159,7 @@ export default async function PanelEvento({
                 Mi lista
               </BotonLink>
             ) : null}
+            <BotonCalendario evento={evento} />
           </div>
         </div>
 

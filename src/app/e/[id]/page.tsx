@@ -17,6 +17,7 @@ import { notFound } from "next/navigation";
 import { alternarCompradoAccion } from "@/actions/regalos";
 import { Acebo } from "@/components/adornos";
 import { Avatar } from "@/components/avatar";
+import { BotonCalendario } from "@/components/boton-calendario";
 import { FormularioCarta } from "@/components/formulario-carta";
 import { ListaPublica } from "@/components/lista-publica";
 import { MarcarCartasLeidas } from "@/components/marcar-cartas-leidas";
@@ -33,7 +34,7 @@ import {
 import { clasesBoton } from "@/components/ui/boton";
 import { BotonEnvio } from "@/components/ui/boton-envio";
 import { requerirUsuario } from "@/lib/auth";
-import { enlaceCalendario, enlaceMapa } from "@/lib/enlaces";
+import { enlaceMapa } from "@/lib/enlaces";
 import { nombrePokemon } from "@/lib/pokemon";
 import {
   aQuienLeRegala,
@@ -100,20 +101,15 @@ export default async function MiEvento({
   );
 
   const mapa = enlaceMapa(evento.place, evento.placeUrl);
-  const calendario = enlaceCalendario({
-    titulo: evento.name,
-    inicio: evento.eventDate,
-    lugar: evento.place,
-    detalles: evento.message,
-  });
 
   const datosEvento = [
+    // La fecha es solo dato: lo de agendar vive en su propio botón, abajo.
     evento.eventDate
       ? {
           icono: CalendarDays,
           texto: formatearFecha(evento.eventDate)!,
-          url: calendario,
-          titulo: "Agregar al calendario",
+          url: null,
+          titulo: undefined,
         }
       : null,
     evento.place
@@ -161,6 +157,8 @@ export default async function MiEvento({
             )}
           </div>
         ) : null}
+
+        <BotonCalendario evento={evento} className="mt-3" />
 
         {evento.message ? (
           <p className="mt-4 rounded-2xl border-2 border-tinta bg-amarillo-claro px-4 py-2.5 text-sm font-semibold">
